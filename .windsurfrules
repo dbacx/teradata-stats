@@ -1,14 +1,30 @@
 # PROJECT BRIEF: Framework de Automatización de Estadísticas Teradata (TD-Stats-Optimizer)
 
 **Paso 0 (Setup de Git y GitHub):** Actúa como un experto en DevOps. Quiero inicializar este proyecto con Git y subirlo a mi cuenta de GitHub.
+
 Por favor, realiza lo siguiente:
 1. Inicializa el repositorio local de Git en esta carpeta C:\Repositories, el repositorio se debe llamar teradata-stats, mi cuenta github se llama https://github.com/dbacx
 
 2. Crea un archivo `.gitignore` robusto y específico para un proyecto de Python, asegurándote de excluir carpetas de entornos virtuales (`venv`, `.env`, `__pycache__`, etc.) para proteger las credenciales de Teradata.
 
+
 3. Prepara el primer commit con la estructura actual.
 
 4. Indícame los comandos exactos de terminal que debo ejecutar para crear el repositorio remoto usando GitHub CLI (`gh repo create`) y hacer el primer `git push`. Si no tengo GitHub CLI, dame la alternativa tradicional con `git remote add origin`.
+Por favor, ejecuta el **Paso 4 (Skill - Recommender)** del Project Brief.
+
+Desarrolla el archivo `skills/recommender.py`. Requisitos:
+1. Importa `pandas as pd`.
+2. Crea una clase llamada `DDLRecommender`.
+3. Implementa un método `generate_collect_stats(self, df_stale: pd.DataFrame) -> list[str]`. 
+   - Debe iterar sobre el DataFrame de estadísticas desactualizadas (Stale) y generar un string DDL por fila con la sintaxis: 
+     `COLLECT STATISTICS ON {DatabaseName}.{TableName} COLUMN ({ColumnNames});`
+   - Nota: Si la columna es '*', la sintaxis es simplemente `COLLECT STATISTICS ON {DatabaseName}.{TableName};`
+4. Implementa un método `generate_drop_stats(self, df_bloat: pd.DataFrame) -> list[str]`.
+   - Para el exceso de histogramas, genera: 
+     `DROP STATISTICS ON {DatabaseName}.{TableName} COLUMN ({ColumnNames});`
+5. Maneja los nombres de columnas de Teradata de forma segura (añadiendo comillas dobles si es necesario en el futuro, pero por ahora usando el nombre crudo).
+6. Usa type hints y añade un docstring claro a la clase.
 
 
 ## 1. Contexto del Proyecto
@@ -65,7 +81,63 @@ El motor `analyzers` deberá soportar los siguientes módulos de reglas lógicas
 
 A continuación, los comandos que el usuario te dará para avanzar modularmente. Cuando el usuario ejecute uno, limítate a resolver ese paso específico:
 
+**Paso 0 (Setup de Git y GitHub):** Actúa como un experto en DevOps. Quiero inicializar este proyecto con Git y subirlo a mi cuenta de GitHub.
+Por favor, realiza lo siguiente:
+1. Inicializa el repositorio local de Git en esta carpeta.
+2. Crea un archivo `.gitignore` robusto y específico para un proyecto de Python, asegurándote de excluir carpetas de entornos virtuales (`venv`, `.env`, `__pycache__`, etc.) para proteger las credenciales de Teradata.
+3. Prepara el primer commit con la estructura actual.
+4. Indícame los comandos exactos de terminal que debo ejecutar para crear el repositorio remoto usando GitHub CLI (`gh repo create`) y hacer el primer `git push`. Si no tengo GitHub CLI, dame la alternativa tradicional con `git remote add origin`.
+
 * **Paso 1 (Setup Core):** "Crea la estructura de carpetas del proyecto. Luego, redacta el archivo `core/connection.py` usando `teradatasql`. Debe incluir soporte para leer variables de entorno y una función que inyecte el Query Band 'App=TDStatsOpt' al iniciar la sesión."
-* **Paso 2 (Collector de Diccionario):** "Desarrolla `collectors/dictionary_ext.py`. Necesito una función que ejecute una consulta SQL eficiente uniendo `DBC.StatsV`, `DBC.TablesV` y `DBC.TableSizeV` para una base de datos específica, y devuelva un `pandas.DataFrame`. Incluye Type Hints y manejo de logs."
-* **Paso 3 (Analyzer - Unused & Stale):** "Crea el archivo `analyzers/health_rules.py`. Escribe una función que reciba un DataFrame con la metadata de estadísticas y un DataFrame con el uso de objetos, y retorne dos DataFrames filtrados: uno con objetos sin uso en 30 días (Regla 1) y otro con estadísticas desactualizadas (Regla 6). Usa solo operaciones de pandas."
-* **Paso 4 (Skill - Recommender):** "Desarrolla `skills/recommender.py`. Crea una clase que reciba los DataFrames de resultados del Analyzer y genere una lista de sentencias DDL (ej. `DROP STATISTICS...` o `COLLECT STATISTICS...`)."
+
+* **Paso 2 (Collector de Diccionario)** del Project Brief. 
+Desarrolla el archivo `collectors/dictionary_ext.py`. Requisitos estrictos:
+1. Importa la función de conexión desde `core.connection` y `pandas` para el manejo de datos.
+2. Crea una función llamada `extract_database_stats(database_name: str) -> pd.DataFrame`.
+3. La consulta SQL debe unir `DBC.StatsV`, `DBC.TablesV` (filtrando `TableKind='T'`) y `DBC.TableSizeV`.
+4. **CRÍTICO PARA TERADATA:** Para evitar productos cartesianos y cálculos erróneos de espacio, la consulta a `DBC.TableSizeV` debe hacerse como una subconsulta pre-agrupada (`SUM(CurrentPerm)`) por `DatabaseName` y `TableName` antes de hacer el JOIN principal.
+5. Transforma el tamaño de bytes a Gigabytes (GB) dentro del mismo SQL.
+6. Ejecuta el query usando `pd.read_sql()` pasando la conexión de `core/connection.py`.
+7. Implementa manejo de excepciones (`try-except`) y `logging` para registrar el éxito o fallo de la extracción, incluyendo la cantidad de filas recuperadas.
+
+**Paso 3 (Analyzer - Unused & Stale)**.
+
+Desarrolla el archivo `analyzers/health_rules.py`. Requisitos:
+1. Importa `pandas as pd` y la librería `datetime`.
+2. Crea una clase llamada `StatsAnalyzer`.
+3. Implementa un método `detect_stale_stats(df_stats: pd.DataFrame, days_threshold: int = 15) -> pd.DataFrame`. 
+   - Esta función debe filtrar el DataFrame usando **solo operaciones vectorizadas de Pandas** para encontrar filas donde `LastCollectTimeStamp` sea más antiguo que `days_threshold`.
+4. Implementa un método `detect_dictionary_bloat(df_stats: pd.DataFrame, max_stats_per_table: int = 50) -> pd.DataFrame`.
+   - Debe usar Pandas (`groupby`, `count`) para encontrar qué tablas tienen una cantidad excesiva de estadísticas individuales recolectadas.
+5. Mantén type hints estrictos y logs descriptivos.
+
+
+**Paso 4 (Skill - Recommender)** del Project Brief.
+
+Desarrolla el archivo `skills/recommender.py`. Requisitos:
+1. Importa `pandas as pd`.
+2. Crea una clase llamada `DDLRecommender`.
+3. Implementa un método `generate_collect_stats(self, df_stale: pd.DataFrame) -> list[str]`. 
+   - Debe iterar sobre el DataFrame de estadísticas desactualizadas (Stale) y generar un string DDL por fila con la sintaxis: 
+     `COLLECT STATISTICS ON {DatabaseName}.{TableName} COLUMN ({ColumnNames});`
+   - Nota: Si la columna es '*', la sintaxis es simplemente `COLLECT STATISTICS ON {DatabaseName}.{TableName};`
+4. Implementa un método `generate_drop_stats(self, df_bloat: pd.DataFrame) -> list[str]`.
+   - Para el exceso de histogramas, genera: 
+     `DROP STATISTICS ON {DatabaseName}.{TableName} COLUMN ({ColumnNames});`
+5. Maneja los nombres de columnas de Teradata de forma segura (añadiendo comillas dobles si es necesario en el futuro, pero por ahora usando el nombre crudo).
+6. Usa type hints y añade un docstring claro a la clase.
+
+**Paso 5  Para cerrar nuestro MVP, vamos a construir la interfaz gráfica. Desarrolla el archivo `ui/app.py` y actualiza la raíz del proyecto.
+
+Requisitos:
+1. Importa `streamlit as st`, `pandas`, y los módulos que creamos: `extract_database_stats` (Collector), `StatsAnalyzer` (Analyzer), y `DDLRecommender` (Skill).
+2. Configura la página de Streamlit: `st.set_page_config(page_title="TD Stats Optimizer", layout="wide")`.
+3. Crea un panel lateral (`st.sidebar`) con un campo de texto para ingresar el `DatabaseName` y un botón "Ejecutar Análisis".
+4. Si el botón es presionado:
+   - Muestra un `st.spinner("Extrayendo diccionario...")`. Llama al Collector.
+   - Si es exitoso, pasa el DataFrame al `StatsAnalyzer` para detectar "Stale Stats" (usa 15 días por defecto).
+   - Muestra métricas rápidas con `st.metric` (ej. "Total Tablas", "Stats Desactualizadas").
+   - Muestra el DataFrame de "Stale Stats" usando `st.dataframe()`.
+   - Pasa ese DataFrame al `DDLRecommender` y muestra los scripts SQL generados en un bloque de código usando `st.code(..., language='sql')`.
+5. En la raíz del proyecto, crea o actualiza un archivo `main_cli.py` muy sencillo que sirva como punto de entrada alternativo si alguien no quiere usar la UI.
+6. Indícame el comando de terminal (`streamlit run ui/app.py`) para levantar la aplicación localmente.
