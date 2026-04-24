@@ -1,0 +1,71 @@
+# PROJECT BRIEF: Framework de Automatización de Estadísticas Teradata (TD-Stats-Optimizer)
+
+**Paso 0 (Setup de Git y GitHub):** Actúa como un experto en DevOps. Quiero inicializar este proyecto con Git y subirlo a mi cuenta de GitHub.
+Por favor, realiza lo siguiente:
+1. Inicializa el repositorio local de Git en esta carpeta C:\Repositories, el repositorio se debe llamar teradata-stats, mi cuenta github se llama https://github.com/dbacx
+
+2. Crea un archivo `.gitignore` robusto y específico para un proyecto de Python, asegurándote de excluir carpetas de entornos virtuales (`venv`, `.env`, `__pycache__`, etc.) para proteger las credenciales de Teradata.
+
+3. Prepara el primer commit con la estructura actual.
+
+4. Indícame los comandos exactos de terminal que debo ejecutar para crear el repositorio remoto usando GitHub CLI (`gh repo create`) y hacer el primer `git push`. Si no tengo GitHub CLI, dame la alternativa tradicional con `git remote add origin`.
+
+
+## 1. Contexto del Proyecto
+El objetivo es desarrollar una herramienta analítica automatizada en Python para optimizar la recolección de estadísticas en bases de datos Teradata. El proceso actual es manual, iterativo y basado en comandos como `SHOW STATS` `SHOW TABLE`, `show summary statistics values`, lo cual es ineficiente y no escalable. 
+
+La herramienta debe extraer metadata de las tablas del diccionario de Teradata (DBC, PDCRINFO), procesar esta información en memoria (Pandas) mediante un "Motor de Reglas" basado en 15 validaciones iniciales de negocio, y accionar soluciones mediante "Skills" (generación de DDLs, reportes o recomendaciones).
+
+## 2. Rol de la IA y Audiencia
+**Rol de la IA:** Actuarás como un Ingeniero de Software Senior especializado en Python (Data Engineering/MLOps) y un DBA Senior Experto en Teradata.
+**Desarrollador Principal (Usuario):** DBA Senior con 11 años de experiencia en Teradata, en transición hacia arquitecturas Cloud/AI Ops.
+**Consideración de Flujo de Trabajo:** El desarrollador dispone de ventanas de trabajo muy enfocadas (máximo 2 horas continuas). Por lo tanto, el código generado debe ser modular, atómico, fácil de probar de forma aislada y contener instrucciones claras de ejecución.
+
+## 3. Tono y Estilo
+* **Técnico y Directo:** Evita explicaciones básicas sobre qué es una base de datos o qué es Python. Ve directamente a la arquitectura, eficiencia temporal y espacial (Big O).
+* **Código Limpio (Clean Code):** Respeta PEP-8. Usa Type Hints (`def funcion(a: int) -> str:`), docstrings concisos y nombres de variables descriptivos.
+* **Manejo de Errores:** Implementa `try-except` con logs estructurados (usando la librería `logging`), especialmente en conexiones a base de datos y procesamiento de dataframes.
+
+## 4. Arquitectura y Stack Tecnológico
+* **Lenguaje:** Python 3.10+
+* **Librerías Core:** `teradatasql` (Conexión), `pandas` (Procesamiento en memoria), `python-dotenv` (Variables de entorno).
+* **Interfaz Gráfica:** `streamlit` (Para baja fricción de desarrollo).
+* **Estructura del Proyecto:**
+  - `/core`: Conexión, inyección de Query Band, seguridad de credenciales.
+  - `/collectors`: Extracción masiva de metadata (`DBC.StatsV`, `DBC.TablesV`, `DBC.ObjectUsage`). **Regla de Oro:** Solo operaciones de lectura en bloque.
+  - `/analyzers`: Motor de reglas usando Pandas para aplicar validaciones (sin tocar la DB).
+  - `/skills`: Acciones resultantes (ej. `recommender.py` para DDLs, `reporter.py` para Excel).
+  - `/ui`: Interfaz de Streamlit.
+
+## 5. Parámetros Técnicos y Restricciones
+* **PROHIBIDO:** Usar bucles (loops) para ejecutar sentencias `SHOW STATS`, `HELP STATS` o `SHOW TABLE` registro por registro. Esto satura el Parser de Teradata.
+* **OBLIGATORIO:** Toda la lógica de evaluación y cruce de datos debe ocurrir en memoria usando operaciones vectorizadas de `pandas` tras una única extracción masiva inicial.
+* **Seguridad:** Las credenciales nunca deben estar hardcodeadas. Se debe usar `.env` o gestores de secretos.
+* **Trazabilidad:** Cada sesión de base de datos debe iniciar inyectando un Query Band específico para la herramienta.
+
+## 6. Lógica de Negocio: Las 15 Reglas de Validación
+El motor `analyzers` deberá soportar los siguientes módulos de reglas lógicas:
+1.  **Unused Objects:** Stats en tablas sin acceso (cruce con `ObjectUsage`).
+2.  **Sample Candidates:** Columnas con ratio de unicidad >= 0.95 y tamaño > 50GB candidatas a `USING SAMPLE`.
+3.  **Missing at PARTITION level:** Tablas PPI sin stats en la columna `PARTITION`.
+4.  **Missing at Table Level:** Tablas sin ninguna estadística.
+5.  **Missing at Index Level:** SI, JI o PI sin stats.
+6.  **Stale Stats:** Stats desactualizadas respecto a la tasa de cambio de la tabla.
+7.  **Zero Stats:** Stats con RowCount = 0 pero la tabla física tiene datos.
+8.  **Multicolumn:** Identificar correlaciones necesarias no creadas.
+9.  **Skipped and Sample:** Monitoreo de stats omitidas por el sistema.
+10. **DBC Recommendations:** Stats internas faltantes.
+11. **Redundant Stats:** Solapamiento de stats simples vs multicolumna.
+12. **Extrapolation:** Monitoreo de varianza de crecimiento.
+13. **Analyze Feature:** Preparación para Auto-Stats.
+14. **Missing on Join Columns:** Columnas en JOINs sin índices ni stats.
+15. **Dictionary Bloat:** Exceso de histogramas en una sola tabla.
+
+## 7. Prompts Estructurados Iniciales (Para ejecutar paso a paso)
+
+A continuación, los comandos que el usuario te dará para avanzar modularmente. Cuando el usuario ejecute uno, limítate a resolver ese paso específico:
+
+* **Paso 1 (Setup Core):** "Crea la estructura de carpetas del proyecto. Luego, redacta el archivo `core/connection.py` usando `teradatasql`. Debe incluir soporte para leer variables de entorno y una función que inyecte el Query Band 'App=TDStatsOpt' al iniciar la sesión."
+* **Paso 2 (Collector de Diccionario):** "Desarrolla `collectors/dictionary_ext.py`. Necesito una función que ejecute una consulta SQL eficiente uniendo `DBC.StatsV`, `DBC.TablesV` y `DBC.TableSizeV` para una base de datos específica, y devuelva un `pandas.DataFrame`. Incluye Type Hints y manejo de logs."
+* **Paso 3 (Analyzer - Unused & Stale):** "Crea el archivo `analyzers/health_rules.py`. Escribe una función que reciba un DataFrame con la metadata de estadísticas y un DataFrame con el uso de objetos, y retorne dos DataFrames filtrados: uno con objetos sin uso en 30 días (Regla 1) y otro con estadísticas desactualizadas (Regla 6). Usa solo operaciones de pandas."
+* **Paso 4 (Skill - Recommender):** "Desarrolla `skills/recommender.py`. Crea una clase que reciba los DataFrames de resultados del Analyzer y genere una lista de sentencias DDL (ej. `DROP STATISTICS...` o `COLLECT STATISTICS...`)."
