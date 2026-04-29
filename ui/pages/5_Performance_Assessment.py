@@ -1,24 +1,24 @@
 """
-Module 4: Space Assessment Page
+Module 3: Performance & DDL Assessment Page
 
-This page provides a dedicated interface for the Space Assessment module,
-using the new SpaceCollector and SpaceAnalyzer classes.
+This page provides a dedicated interface for the Performance Assessment module,
+using the new PerformanceCollector and PerformanceAnalyzer classes.
 """
 
 import streamlit as st
 import pandas as pd
+import plotly.graph_objects as go
 from datetime import datetime
 import logging
 import sys
 import os
-import time
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod4_space_collector import SpaceCollector
-from analyzers.mod4_space_analyzer import SpaceAnalyzer
+from collectors.mod3_performance_collector import PerformanceCollector
+from analyzers.mod3_performance_analyzer import PerformanceAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging
@@ -72,104 +72,117 @@ def inject_custom_css():
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
-    if 'mod4_collected_data' not in st.session_state:
-        st.session_state.mod4_collected_data = None
-    if 'mod4_analyzed_data' not in st.session_state:
-        st.session_state.mod4_analyzed_data = None
-    if 'mod4_findings' not in st.session_state:
-        st.session_state.mod4_findings = None
+    if 'mod3_collected_data' not in st.session_state:
+        st.session_state.mod3_collected_data = None
+    if 'mod3_analyzed_data' not in st.session_state:
+        st.session_state.mod3_analyzed_data = None
+    if 'mod3_findings' not in st.session_state:
+        st.session_state.mod3_findings = None
 
 
 def display_kpi_cards(analyzed_data: dict):
-    """Display KPI cards for space assessment."""
-    st.subheader("KPI Cards - Space Assessment")
+    """Display KPI cards for performance assessment."""
+    st.subheader("KPI Cards - Performance Assessment")
     
     # Calculate metrics
-    db_util_df = analyzed_data.get('01_db_space_utilization', pd.DataFrame())
-    unused_df = analyzed_data.get('02_unused_tables_space', pd.DataFrame())
-    mvc_df = analyzed_data.get('03_mvc_candidates', pd.DataFrame())
-    top_df = analyzed_data.get('04_top_tables', pd.DataFrame())
+    skewed_df = analyzed_data.get('02_highly_skewed_queries', pd.DataFrame())
+    spool_df = analyzed_data.get('03_spool_usage_alerts', pd.DataFrame())
+    fts_df = analyzed_data.get('01_full_table_scans', pd.DataFrame())
     
-    # Terabytes Analyzed
-    total_tb = 0
-    if not db_util_df.empty:
-        total_tb = db_util_df['CurrentPerm_TB'].sum()
+    # Queries with Skew
+    skewed_count = len(skewed_df) if not skewed_df.empty else 0
     
-    # GB Recoverable (unused tables)
-    recoverable_gb = 0
-    if not unused_df.empty:
-        recoverable_gb = unused_df['Size_GB'].sum()
+    # Spool Errors
+    spool_errors = 0
+    if not spool_df.empty and 'ErrorCode' in spool_df.columns:
+        spool_errors = len(spool_df[spool_df['ErrorCode'] == 2646])
     
-    # Critical Databases
-    critical_dbs = 0
-    if not db_util_df.empty:
-        critical_dbs = len(db_util_df[db_util_df['Usage_Pct'] > 80])
+    # High Spool Usage
+    high_spool = 0
+    if not spool_df.empty and 'NormalizedSpoolUsage' in spool_df.columns:
+        high_spool = len(spool_df[spool_df['NormalizedSpoolUsage'] > 80])
     
-    # MVC Candidates
-    mvc_count = len(mvc_df)
+    # Tables with High I/O
+    high_io_tables = len(fts_df) if not fts_df.empty else 0
     
-    # Skewed Tables
-    skewed_df = analyzed_data.get('05_skewed_tables', pd.DataFrame())
-    skewed_count = len(skewed_df)
+    # Unused Indexes
+    unused_df = analyzed_data.get('04_unused_indexes', pd.DataFrame())
+    unused_indexes = len(unused_df) if not unused_df.empty else 0
     
     # Display KPIs
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("TB Analizados", f"{total_tb:.2f}")
+        st.metric("Queries con Skew", skewed_count)
     with col2:
-        st.metric("GB Recuperables", f"{recoverable_gb:.2f}")
+        st.metric("Errores de Spool", spool_errors)
     with col3:
-        st.metric("BDs Críticas", critical_dbs)
+        st.metric("Uso Spool Alto", high_spool)
     with col4:
-        st.metric("MVC Candidatos", mvc_count)
+        st.metric("Tablas Alto I/O", high_io_tables)
     with col5:
-        st.metric("Tablas Skewed", skewed_count)
+        st.metric("Indices a Revisar", unused_indexes)
     
     st.markdown("---")
 
 
 def display_charts(analyzed_data: dict):
-    """Display charts for top tables and database usage."""
+    """Display charts for performance assessment."""
     st.subheader("Visualizaciones")
     
     col1, col2 = st.columns(2)
     
-    # Top 10 Tables Chart
+    # Scatter Plot: TotalIOCount vs AmpCPUSkew
     with col1:
-        st.write("**Top 10 Tablas por Tamaño**")
-        top_df = analyzed_data.get('04_top_tables', pd.DataFrame())
-        if not top_df.empty and 'DatabaseName' in top_df.columns and 'TableName' in top_df.columns and 'Size_GB' in top_df.columns:
-            top_10 = top_df.head(10).copy()
+        st.write("**Scatter Plot: I/O vs CPU Skew**")
+        skewed_df = analyzed_data.get('02_highly_skewed_queries', pd.DataFrame())
+        
+        if not skewed_df.empty and 'TotalIOCount' in skewed_df.columns and 'AmpCPUSkew' in skewed_df.columns:
+            fig = go.Figure(data=go.Scatter(
+                x=skewed_df['TotalIOCount'],
+                y=skewed_df['AmpCPUSkew'],
+                mode='markers',
+                marker=dict(
+                    size=8,
+                    color=skewed_df['AmpCPUSkew'],
+                    colorscale='Viridis',
+                    showscale=True,
+                    colorbar=dict(title="CPU Skew %")
+                ),
+                text=skewed_df['UserName'],
+                hovertemplate='<b>%{text}</b><br>I/O: %{x:,.0f}<br>Skew: %{y:.2f}%<extra></extra>'
+            ))
+            
+            fig.update_layout(
+                title="Queries: I/O vs CPU Skew",
+                xaxis_title="Total I/O Count",
+                yaxis_title="CPU Skew (%)",
+                height=500,
+                hovermode='closest'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No hay datos suficientes o faltan columnas para generar el scatter plot.")
+    
+    # Bar Chart: Top 10 Tables by I/O
+    with col2:
+        st.write("**Top 10 Tablas por I/O**")
+        fts_df = analyzed_data.get('01_full_table_scans', pd.DataFrame())
+        
+        if not fts_df.empty and 'DatabaseName' in fts_df.columns and 'TableName' in fts_df.columns and 'TotalIO' in fts_df.columns:
+            top_10 = fts_df.head(10).copy()
             top_10['Table_Label'] = top_10['DatabaseName'] + '.' + top_10['TableName']
-            top_10 = top_10.sort_values('Size_GB', ascending=True)
+            top_10 = top_10.sort_values('TotalIO', ascending=True)
             
             st.bar_chart(
                 data=top_10,
-                x='Size_GB',
+                x='TotalIO',
                 y='Table_Label',
                 horizontal=True,
                 width='stretch'
             )
         else:
-            st.warning("No hay datos suficientes o faltan columnas para generar el gráfico del Top 10 de Tablas.")
-    
-    # Database Usage Chart
-    with col2:
-        st.write("**Uso de Bases de Datos (Top 10)**")
-        db_df = analyzed_data.get('01_db_space_utilization', pd.DataFrame())
-        if not db_df.empty and 'DatabaseName' in db_df.columns and 'Usage_Pct' in db_df.columns:
-            top_10_db = db_df.head(10).copy()
-            top_10_db = top_10_db.sort_values('Usage_Pct', ascending=True)
-            
-            st.bar_chart(
-                data=top_10_db,
-                x='Usage_Pct',
-                y='DatabaseName',
-                horizontal=True,
-                width='stretch'
-            )
-        else:
-            st.warning("No hay datos suficientes o faltan columnas para generar el gráfico de Uso de Bases de Datos.")
+            st.warning("No hay datos suficientes o faltan columnas para generar el gráfico de tablas por I/O.")
 
 
 def display_findings_table(analyzed_data: dict):
@@ -180,11 +193,10 @@ def display_findings_table(analyzed_data: dict):
     all_findings = []
     
     component_names = {
-        "01_db_space_utilization": "DB Space Utilization",
-        "02_unused_tables_space": "Unused Tables Space",
-        "03_mvc_candidates": "MVC Candidates",
-        "04_top_tables": "Top Tables",
-        "05_skewed_tables": "Skewed Tables"
+        "01_full_table_scans": "Full Table Scans",
+        "02_highly_skewed_queries": "Highly Skewed Queries",
+        "03_spool_usage_alerts": "Spool Usage Alerts",
+        "04_unused_indexes": "Unused Indexes"
     }
     
     for component_key, component_name in component_names.items():
@@ -199,6 +211,11 @@ def display_findings_table(analyzed_data: dict):
         return
     
     combined_df = pd.concat(all_findings, ignore_index=True)
+    
+    # Check if Severity column exists before applying filters
+    if combined_df.empty or 'Severity' not in combined_df.columns:
+        st.info("No hay hallazgos de configuración para mostrar con los filtros actuales.")
+        return
     
     # Severity filter
     severity_filter = st.multiselect(
@@ -246,7 +263,7 @@ def display_findings_table(analyzed_data: dict):
     st.download_button(
         label="Descargar CSV",
         data=csv,
-        file_name=f"space_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        file_name=f"performance_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv"
     )
 
@@ -256,15 +273,14 @@ def display_ddl_actions(analyzed_data: dict):
     st.subheader("Acciones DDL de Remediación")
     
     component_names = {
-        "01_db_space_utilization": "DB Space Utilization",
-        "02_unused_tables_space": "Unused Tables Space",
-        "03_mvc_candidates": "MVC Candidates",
-        "04_top_tables": "Top Tables",
-        "05_skewed_tables": "Skewed Tables"
+        "01_full_table_scans": "Full Table Scans",
+        "02_highly_skewed_queries": "Highly Skewed Queries",
+        "03_spool_usage_alerts": "Spool Usage Alerts",
+        "04_unused_indexes": "Unused Indexes"
     }
     
     # Group by DDL_Action
-    ddl_actions = {'DROP': [], 'ADD_COMPRESS': [], 'MONITOR': [], 'REDESIGN': []}
+    ddl_actions = {'REVIEW_INDEX': [], 'OPTIMIZE_QUERY': [], 'ADJUST_SPOOL': [], 'DROP_INDEX': []}
     
     for component_key, component_name in component_names.items():
         df = analyzed_data.get(component_key, pd.DataFrame())
@@ -295,7 +311,7 @@ def display_ddl_actions(analyzed_data: dict):
         st.download_button(
             label="Descargar Todas las Acciones DDL",
             data=combined_ddl,
-            file_name=f"space_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
+            file_name=f"performance_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
         )
 
@@ -305,38 +321,15 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.title("Space")
-    st.markdown("*Evaluación y Optimización de Espacio en Teradata*")
+    st.title("Performance Assessment")
+    st.markdown("*Evaluación y Optimización de Rendimiento en Teradata*")
     st.markdown("---")
     
     # Sidebar configuration
     st.sidebar.header("Configuración")
     
-    # Database filter
-    database_name = st.sidebar.text_input(
-        "Filtrar por Base de Datos (opcional)",
-        placeholder="Ej: USER_DB, ALL para todas"
-    )
-    
-    # Threshold configuration
-    unused_days = st.sidebar.slider(
-        "Umbral Días para Tablas Sin Uso",
-        min_value=30,
-        max_value=365,
-        value=THRESHOLDS['unused_object_days'],
-        help="Tablas sin acceso por más de este número de días se considerarán sin uso"
-    )
-    
-    skew_threshold = st.sidebar.slider(
-        "Umbral % Skew para Tablas",
-        min_value=10,
-        max_value=100,
-        value=THRESHOLDS['pi_skew_pct'],
-        help="Porcentaje de skew para identificar tablas desbalanceadas"
-    )
-    
     # Execute Analysis Button
-    if st.sidebar.button("Ejecutar Análisis Módulo 4", type="primary"):
+    if st.sidebar.button("Ejecutar Análisis Módulo 3", type="primary"):
         try:
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):
@@ -344,46 +337,42 @@ def main():
                 connection = td_conn.connect()
                 logger.info("Connected to Teradata")
             
-            # Step 2: Collect data using SpaceCollector
-            with st.spinner("Recolectando datos de espacio..."):
-                collector = SpaceCollector()
-                params = {
-                    'unused_days_threshold': unused_days,
-                    'skew_pct_threshold': skew_threshold
-                }
-                collected_data = collector.collect(connection, params=params)
-                st.session_state.mod4_collected_data = collected_data
+            # Step 2: Collect data using PerformanceCollector
+            with st.spinner("Recolectando datos de rendimiento..."):
+                collector = PerformanceCollector()
+                collected_data = collector.collect(connection)
+                st.session_state.mod3_collected_data = collected_data
                 
                 total_rows = sum(len(df) for df in collected_data.values())
                 logger.info(f"Collected {total_rows} rows from {len(collected_data)} components")
             
-            # Step 3: Analyze data using SpaceAnalyzer
+            # Step 3: Analyze data using PerformanceAnalyzer
             with st.spinner("Analizando datos..."):
-                analyzer = SpaceAnalyzer()
+                analyzer = PerformanceAnalyzer()
                 analyzed_data = analyzer.run(collected_data)
-                st.session_state.mod4_analyzed_data = analyzed_data
-                st.session_state.mod4_findings = analyzer.get_findings()
+                st.session_state.mod3_analyzed_data = analyzed_data
+                st.session_state.mod3_findings = analyzer.get_findings()
                 
-                logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod4_findings)}")
+                logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod3_findings)}")
             
             connection.close()
-            st.success(f"Análisis completado. Total hallazgos: {len(st.session_state.mod4_findings)}")
+            st.success(f"Análisis completado. Total hallazgos: {len(st.session_state.mod3_findings)}")
             
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
             logger.error(f"Analysis error: {str(e)}")
     
     # Display results if available
-    if st.session_state.mod4_analyzed_data:
+    if st.session_state.mod3_analyzed_data:
         st.markdown("## Resultados del Análisis")
         
-        display_kpi_cards(st.session_state.mod4_analyzed_data)
+        display_kpi_cards(st.session_state.mod3_analyzed_data)
         st.markdown("---")
-        display_charts(st.session_state.mod4_analyzed_data)
+        display_charts(st.session_state.mod3_analyzed_data)
         st.markdown("---")
-        display_findings_table(st.session_state.mod4_analyzed_data)
+        display_findings_table(st.session_state.mod3_analyzed_data)
         st.markdown("---")
-        display_ddl_actions(st.session_state.mod4_analyzed_data)
+        display_ddl_actions(st.session_state.mod3_analyzed_data)
 
 
 if __name__ == "__main__":

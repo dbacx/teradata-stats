@@ -32,287 +32,40 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def inject_custom_css():
-    """Inject custom CSS for fonts and icons."""
-    css = """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
-    
-    * {
-        font-family: 'Inter', sans-serif !important;
-    }
-    
-    [data-testid="stMetricValue"] {
-        font-size: 3.5rem !important;
-        font-weight: 600 !important;
-    }
-    
-    [data-testid="stAlert"] {
-        font-size: 0.85rem !important;
-        padding: 0.5rem !important;
-    }
-    
-    .material-symbols-outlined {
-        font-family: 'Material Symbols Outlined';
-        font-weight: normal;
-        font-style: normal;
-        font-size: 24px;
-        line-height: 1;
-        letter-spacing: normal;
-        text-transform: none;
-        display: inline-block;
-        white-space: nowrap;
-        word-wrap: normal;
-        direction: ltr;
-    }
-    </style>
-    """
-    st.markdown(css, unsafe_allow_html=True)
-
-# Streamlit page configuration
-st.set_page_config(
-    page_title="TD Stats Optimizer",
-    layout="wide",
-    page_icon="📊",
-    initial_sidebar_state="expanded"
-)
-
-
-def initialize_session_state():
-    """Initialize Streamlit session state variables."""
-    if 'analysis_results' not in st.session_state:
-        st.session_state.analysis_results = None
-    if 'ddl_recommendations' not in st.session_state:
-        st.session_state.ddl_recommendations = None
-    if 'last_database' not in st.session_state:
-        st.session_state.last_database = ""
-
-
-def display_overall_metrics(df_stats: pd.DataFrame, rule_results: dict):
-    """Display overall metrics summary with all 16 rules."""
-    # Base metrics
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        total_tables = df_stats['TableName'].nunique() if not df_stats.empty else 0
-        st.metric("Total Tablas", total_tables)
-    
-    with col2:
-        total_stats = len(df_stats)
-        st.metric("Total Estadísticas", total_stats)
-    
-    st.markdown("---")
-    
-    # Executive Health KPIs Block
-    st.subheader("🏥 HEALTH STATUS")
-    
-    # Calculate health metrics
-    from datetime import datetime, timedelta
-    
-    unused_count = len(rule_results.get('rule_01_unused', pd.DataFrame()))
-    stale_count = len(rule_results.get('rule_06_stale', pd.DataFrame()))
-    zero_count = len(rule_results.get('rule_07_zero_stats', pd.DataFrame()))
-    
-    # Calculate percentages
-    if total_stats > 0:
-        healthy_stats_pct = ((total_stats - stale_count - zero_count) / total_stats) * 100
-    else:
-        healthy_stats_pct = 0
-    
-    if total_tables > 0:
-        active_tables_pct = ((total_tables - unused_count) / total_tables) * 100
-    else:
-        active_tables_pct = 0
-    
-    # Health score (0-100 based on healthy stats percentage)
-    health_score = int(healthy_stats_pct)
-    
-    # Determine emoji and color based on score
-    if health_score > 80:
-        health_emoji = "🟢"
-        health_status = "EXCELLENT"
-    elif health_score >= 50:
-        health_emoji = "🟡"
-        health_status = "WARNING"
-    else:
-        health_emoji = "🔴"
-        health_status = "CRITICAL"
-    
-    # Stats requiring attention
-    stats_requiring_attention = stale_count + zero_count
-    
-    # Next action date (current date + 4 days)
-    next_action_date = (datetime.now() + timedelta(days=4)).strftime('%Y-%m-%d')
-    
-    # Display health block
-    st.markdown(f"""
-    <div style="background-color: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid {'#00FF00' if health_score > 80 else '#FFA500' if health_score >= 50 else '#FF0000'};">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span style="font-size: 2.5rem;">{health_emoji}</span>
-                <div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem;">SYSTEM HEALTH</div>
-                    <div style="font-size: 2rem; font-weight: 600;">{health_score}/100</div>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 1.25rem; font-weight: 600; color: {'#00FF00' if health_score > 80 else '#FFA500' if health_score >= 50 else '#FF0000'};">{health_status}</div>
-            </div>
-        </div>
-        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.6;">
-            <strong>{stats_requiring_attention} statistics require attention</strong> | Next action: {next_action_date}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Display percentage metrics
-    col3, col4 = st.columns(2)
-    with col3:
-        st.metric("% Estadísticas Saludables", f"{healthy_stats_pct:.1f}%")
-    with col4:
-        st.metric("% Tablas Activas", f"{active_tables_pct:.1f}%")
-    
-    st.markdown("---")
-    st.subheader("📊 DASHBOARD STATISTICS STATUS")
-    
-    # 4x4 grid for 16 rule metrics - reordered by priority
-    rule_metrics = [
-        ("SIN USO", 'rule_01_unused'),
-        ("DESACTUALIZADAS", 'rule_06_stale'),
-        ("PARTITION", 'rule_03_partition_missing'),
-        ("ZERO STATS", 'rule_07_zero_stats'),
-        ("TABLE MISSING", 'rule_04_table_missing'),
-        ("INDEX MISSING", 'rule_05_index_missing'),
-        ("SAMPLE", 'rule_02_sample'),
-        ("MULTICOLUMN", 'rule_08_multicolumn'),
-        ("SKIPPED/SAMPLE", 'rule_09_skipped_sample'),
-        ("DBC MISSING", 'rule_10_dbc_missing'),
-        ("REDUNDANT", 'rule_11_redundant'),
-        ("EXTRAPOLATION", 'rule_12_extrapolation'),
-        ("HARDCODED SAMPLE", 'rule_13_analyze'),
-        ("JOIN COLUMNS", 'rule_14_join_columns'),
-        ("DICTIONARY BLOAT", 'rule_15_bloat'),
-        ("URGENTES", 'rule_16_urgent_missing')
-    ]
-    
-    # Create 4 rows of 4 columns each
-    for row in range(4):
-        cols = st.columns(4)
-        for col_idx in range(4):
-            rule_idx = row * 4 + col_idx
-            if rule_idx < len(rule_metrics):
-                rule_name, rule_key = rule_metrics[rule_idx]
-                count = len(rule_results.get(rule_key, pd.DataFrame()))
-                with cols[col_idx]:
-                    # Highlight urgent rules with different color
-                    if rule_key == 'rule_16_urgent_missing' and count > 0:
-                        st.metric(rule_name, count, delta_color="inverse")
-                    else:
-                        st.metric(rule_name, count)
-
-
-def display_rule_results(rule_id: str, rule_name: str, result_df: pd.DataFrame):
-    """Display results for a specific rule."""
-    if result_df.empty:
-        st.success(f"✅ No se encontraron hallazgos para {rule_name}")
-        return
-    
-    st.subheader(f"📋 {rule_name}")
-    
-    # Format timestamps for better display
-    display_df = result_df.copy()
-    timestamp_columns = display_df.select_dtypes(include=['datetime64[ns]']).columns
-    for col in timestamp_columns:
-        display_df[col] = display_df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
-    
-    st.dataframe(
-        display_df,
-        width='stretch',
-        height=400
-    )
-    
-    # Show summary statistics
-    with st.expander(f"📊 Resumen de {rule_name}"):
-        if 'DatabaseName' in display_df.columns:
-            db_count = display_df['DatabaseName'].nunique()
-            st.write(f"**Bases de datos afectadas:** {db_count}")
-        
-        if 'TableName' in display_df.columns:
-            table_count = display_df['TableName'].nunique()
-            st.write(f"**Tablas afectadas:** {table_count}")
-        
-        st.write(f"**Total de hallazgos:** {len(display_df)}")
-
-
-def display_ddl_recommendations(ddl_recommendations: dict):
-    """Display generated DDL recommendations."""
-    st.subheader("🔧 Recomendaciones DDL")
-    
-    if not ddl_recommendations:
-        st.info("No hay recomendaciones DDL disponibles")
-        return
-    
-    # Display COLLECT STATISTICS
-    if ddl_recommendations.get('collect_stats'):
-        st.write("**🔄 COLLECT STATISTICS (Actualización):**")
-        # Filter out None values before joining
-        collect_statements = [stmt for stmt in ddl_recommendations['collect_stats'] if stmt is not None]
-        if collect_statements:
-            collect_sql = "\n".join(collect_statements)
-            st.code(collect_sql, language='sql')
-            st.download_button(
-                label="📥 Descargar COLLECT STATS",
-                data=collect_sql,
-                file_name=f"collect_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
-                mime="text/plain"
-            )
-        else:
-            st.info("No hay sentencias COLLECT STATISTICS válidas")
-    
-    # Display DROP STATISTICS
-    if ddl_recommendations.get('drop_stats'):
-        st.write("**🗑️ DROP STATISTICS (Limpieza):**")
-        # Filter out None values before joining
-        drop_statements = [stmt for stmt in ddl_recommendations['drop_stats'] if stmt is not None]
-        if drop_statements:
-            drop_sql = "\n".join(drop_statements)
-            st.code(drop_sql, language='sql')
-            st.download_button(
-                label="📥 Descargar DROP STATS",
-                data=drop_sql,
-                file_name=f"drop_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
-                mime="text/plain"
-            )
-        else:
-            st.info("No hay sentencias DROP STATISTICS válidas")
-    
-    # Display combined recommendations
-    if ddl_recommendations.get('collect_stats') or ddl_recommendations.get('drop_stats'):
-        st.write("**📄 Todas las Recomendaciones:**")
-        recommender = DDLRecommender()
-        combined_output = recommender.format_ddl_output(ddl_recommendations)
-        st.code(combined_output, language='sql')
-        st.download_button(
-            label="📥 Descargar Todas las Recomendaciones",
-            data=combined_output,
-            file_name=f"td_stats_recommendations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
-            mime="text/plain"
-        )
-
-
-def main():
-    """Main application entry point."""
+def main_app():
+    """Main application function for the Home page."""
     inject_custom_css()
     initialize_session_state()
     
-    # Header
-    st.title("📊 TD Stats Optimizer")
-    st.markdown("*Optimización Automatizada de Estadísticas Teradata*")
+    # Corporate Banner
+    st.image("https://placehold.co/1000x200/F0F2F6/000000?text=Managed+Services&font=Montserrat", use_container_width=True)
+    
+    # Corporate Welcome Section
+    st.title("Teradata DBA Services Framework")
+    st.markdown("""
+    Este framework integral proporciona capacidades de auditoría de base de datos, optimización de estadísticas, 
+    gestión de espacio, evaluación de seguridad y recolección de datos para entornos Teradata.
+    
+    La herramienta permite a los administradores de bases de datos e ingenieros de datos:
+    - Analizar y optimizar estadísticas de base de datos para mejorar el rendimiento de consultas
+    - Monitorear y gestionar la utilización de espacio en base de datos
+    - Evaluar configuraciones de seguridad y patrones de acceso de usuarios
+    - Evaluar el registro de consultas y métricas de rendimiento
+    - Generar recomendaciones DDL accionables para remediación
+    
+    Para más información sobre soluciones Teradata, visite el [Sitio Web Oficial de Teradata](https://www.teradata.com/).
+    """)
     st.markdown("---")
     
+    # Copyright
+    st.markdown("""
+    <div style="text-align: center; font-size: 0.85rem; color: rgba(0,0,0,0.6); margin-top: 2rem;">
+        Copyright Teradata Corporation 2026
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Sidebar configuration
-    st.sidebar.header("⚙️ Configuración")
+    st.sidebar.header("Configuración")
     
     # Analysis Level Selection
     analysis_level = st.sidebar.radio(
@@ -360,7 +113,7 @@ def main():
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("🚀 Ejecutar Análisis", type="primary"):
+    if st.sidebar.button("Ejecutar Análisis", type="primary"):
         if analysis_level == "Base de Datos" and (not database_name or not database_name.strip()):
             st.sidebar.error("Por favor, ingrese un nombre de base de datos válido")
             return
@@ -374,7 +127,7 @@ def main():
         # Main analysis workflow
         try:
             # Step 1: Extract statistics metadata with multi-level support
-            with st.spinner("🔄 Extrayendo metadata del diccionario..."):
+            with st.spinner("Extrayendo metadata del diccionario..."):
                 logger.info(f"Starting extraction for level: {analysis_level}, database: {database_name}, table: {table_name}")
                 df_stats = extract_database_stats(database_name=database_name, table_name=table_name)
             
@@ -386,7 +139,7 @@ def main():
                 return
             
             # Step 2: Initialize RulesEngine and register all rules
-            with st.spinner("🔧 Inicializando motor de reglas..."):
+            with st.spinner("Inicializando motor de reglas..."):
                 engine = RulesEngine()
                 
                 # Configure rule-specific parameters
@@ -401,7 +154,7 @@ def main():
                 logger.info(f"Registered {len(engine)} rules")
             
             # Step 3: Execute all rules with timing
-            with st.spinner("🔍 Ejecutando análisis de reglas..."):
+            with st.spinner("Ejecutando análisis de reglas..."):
                 context = {'stats_df': df_stats}
                 start_time = time.time()
                 rule_results = engine.run_all(context)
@@ -418,7 +171,7 @@ def main():
                 }
             
             # Step 4: Generate DDL recommendations
-            with st.spinner("🔧 Generando recomendaciones DDL..."):
+            with st.spinner("Generando recomendaciones DDL..."):
                 recommender = DDLRecommender()
                 
                 # Use rule_16_urgent_missing for COLLECT DDL
@@ -443,7 +196,7 @@ def main():
             scope_msg = f"'{database_name}'" if database_name else "sistema completo"
             if table_name:
                 scope_msg += f", tabla '{table_name}'"
-            st.success(f"✅ Análisis completado para {scope_msg}")
+            st.success(f"Análisis completado para {scope_msg}")
             
         except ValueError as e:
             st.error(f"Error de validación: {str(e)}")
@@ -454,7 +207,7 @@ def main():
     
     # Display results if available
     if st.session_state.analysis_results:
-        st.markdown("## 📈 Resultados del Análisis")
+        st.markdown("## Resultados del Análisis")
         
         results = st.session_state.analysis_results
         df_stats = results['df_stats']
@@ -463,7 +216,7 @@ def main():
         # Display execution time
         if 'execution_time' in results:
             execution_time = results['execution_time']
-            st.success(f"⏳ Tiempo de análisis: {execution_time:.2f} segundos")
+            st.success(f"Tiempo de análisis: {execution_time:.2f} segundos")
         
         # Display overall metrics
         display_overall_metrics(df_stats, rule_results)
@@ -472,7 +225,7 @@ def main():
         
         # Display results in tabs - all 16 rules plus main stats and DDL
         tabs = st.tabs([
-            "📋 Estadísticas",
+            "Estadísticas",
             "SIN USO",
             "DESACTUALIZADAS",
             "PARTITION",
@@ -489,12 +242,12 @@ def main():
             "JOIN COLUMNS",
             "DICTIONARY BLOAT",
             "URGENTES",
-            "🔧 DDL"
+            "DDL"
         ])
         
         # Tab 0: Main Statistics
         with tabs[0]:
-            st.subheader("📋 Estadísticas Completas")
+            st.subheader("Estadísticas Completas")
             if not df_stats.empty:
                 display_df = df_stats.copy()
                 timestamp_columns = display_df.select_dtypes(include=['datetime64[ns]']).columns
@@ -543,7 +296,7 @@ def main():
         
         # Excel Download Section
         st.markdown("---")
-        st.subheader("📥 Exportar Reporte Completo")
+        st.subheader("Exportar Reporte Completo")
         
         col1, col2 = st.columns(2)
         
@@ -561,7 +314,7 @@ def main():
                     filename = f"TD_Stats_Opt_{database_name}_Report_{timestamp}.xlsx"
                     
                     st.download_button(
-                        label="📊 Descargar Excel",
+                        label="Descargar Excel",
                         data=excel_bytes,
                         file_name=filename,
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -585,7 +338,7 @@ def main():
                     filename = f"TD_Stats_Opt_{database_name}_Executive_{timestamp}.pptx"
                     
                     st.download_button(
-                        label="📽️ Descargar PPT Ejecutivo",
+                        label="Descargar PPT Ejecutivo",
                         data=ppt_bytes,
                         file_name=filename,
                         mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -613,5 +366,274 @@ def main():
     )
 
 
+def inject_custom_css():
+    """Inject custom CSS for fonts and icons."""
+    css = """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+    
+    * {
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Compact Mode - Reduce margins */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Compact metrics */
+    [data-testid="stMetricValue"] {
+        font-size: 1.8rem !important;
+        font-weight: 600 !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Reduce gaps */
+    .stGap {
+        gap: 0.3rem !important;
+    }
+    
+    /* Compact general text */
+    p, div, span {
+        font-size: 0.9rem;
+    }
+    
+    /* Compact tables */
+    [data-testid="stDataFrame"] {
+        font-size: 0.85rem;
+    }
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+# Streamlit page configuration
+st.set_page_config(
+    page_title="TD Stats Optimizer",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+
+def initialize_session_state():
+    """Initialize Streamlit session state variables."""
+    if 'analysis_results' not in st.session_state:
+        st.session_state.analysis_results = None
+    if 'ddl_recommendations' not in st.session_state:
+        st.session_state.ddl_recommendations = None
+    if 'last_database' not in st.session_state:
+        st.session_state.last_database = ""
+
+
+def display_overall_metrics(df_stats: pd.DataFrame, rule_results: dict):
+    """Display overall metrics summary with all 16 rules."""
+    # Base metrics
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        total_tables = df_stats['TableName'].nunique() if not df_stats.empty else 0
+        st.metric("Total Tablas", total_tables)
+    
+    with col2:
+        total_stats = len(df_stats)
+        st.metric("Total Estadísticas", total_stats)
+    
+    st.markdown("---")
+    
+    # Executive Health KPIs Block
+    st.subheader("HEALTH STATUS")
+    
+    # Calculate health metrics
+    from datetime import datetime, timedelta
+    
+    unused_count = len(rule_results.get('rule_01_unused', pd.DataFrame()))
+    stale_count = len(rule_results.get('rule_06_stale', pd.DataFrame()))
+    zero_count = len(rule_results.get('rule_07_zero_stats', pd.DataFrame()))
+    
+    # Calculate percentages
+    if total_stats > 0:
+        healthy_stats_pct = ((total_stats - stale_count - zero_count) / total_stats) * 100
+    else:
+        healthy_stats_pct = 0
+    
+    if total_tables > 0:
+        active_tables_pct = ((total_tables - unused_count) / total_tables) * 100
+    else:
+        active_tables_pct = 0
+    
+    # Health score (0-100 based on healthy stats percentage)
+    health_score = int(healthy_stats_pct)
+    
+    # Determine color based on score
+    if health_score > 80:
+        health_status = "EXCELLENT"
+    elif health_score >= 50:
+        health_status = "WARNING"
+    else:
+        health_status = "CRITICAL"
+    
+    # Stats requiring attention
+    stats_requiring_attention = stale_count + zero_count
+    
+    # Next action date (current date + 4 days)
+    next_action_date = (datetime.now() + timedelta(days=4)).strftime('%Y-%m-%d')
+    
+    # Display health block
+    st.markdown(f"""
+    <div style="background-color: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid {'#00FF00' if health_score > 80 else '#FFA500' if health_score >= 50 else '#FF0000'};">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.25rem;">SYSTEM HEALTH</div>
+                    <div style="font-size: 2rem; font-weight: 600;">{health_score}/100</div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 1.25rem; font-weight: 600; color: {'#00FF00' if health_score > 80 else '#FFA500' if health_score >= 50 else '#FF0000'};">{health_status}</div>
+            </div>
+        </div>
+        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.6;">
+            <strong>{stats_requiring_attention} statistics require attention</strong> | Next action: {next_action_date}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Display percentage metrics
+    col3, col4 = st.columns(2)
+    with col3:
+        st.metric("% Estadísticas Saludables", f"{healthy_stats_pct:.1f}%")
+    with col4:
+        st.metric("% Tablas Activas", f"{active_tables_pct:.1f}%")
+    
+    st.markdown("---")
+    st.subheader("DASHBOARD STATISTICS STATUS")
+    
+    # 4x4 grid for 16 rule metrics - reordered by priority
+    rule_metrics = [
+        ("SIN USO", 'rule_01_unused'),
+        ("DESACTUALIZADAS", 'rule_06_stale'),
+        ("PARTITION", 'rule_03_partition_missing'),
+        ("ZERO STATS", 'rule_07_zero_stats'),
+        ("TABLE MISSING", 'rule_04_table_missing'),
+        ("INDEX MISSING", 'rule_05_index_missing'),
+        ("SAMPLE", 'rule_02_sample'),
+        ("MULTICOLUMN", 'rule_08_multicolumn'),
+        ("SKIPPED/SAMPLE", 'rule_09_skipped_sample'),
+        ("DBC MISSING", 'rule_10_dbc_missing'),
+        ("REDUNDANT", 'rule_11_redundant'),
+        ("EXTRAPOLATION", 'rule_12_extrapolation'),
+        ("HARDCODED SAMPLE", 'rule_13_analyze'),
+        ("JOIN COLUMNS", 'rule_14_join_columns'),
+        ("DICTIONARY BLOAT", 'rule_15_bloat'),
+        ("URGENTES", 'rule_16_urgent_missing')
+    ]
+    
+    # Create 4 rows of 4 columns each
+    for row in range(4):
+        cols = st.columns(4)
+        for col_idx in range(4):
+            rule_idx = row * 4 + col_idx
+            if rule_idx < len(rule_metrics):
+                rule_name, rule_key = rule_metrics[rule_idx]
+                count = len(rule_results.get(rule_key, pd.DataFrame()))
+                with cols[col_idx]:
+                    # Highlight urgent rules with different color
+                    if rule_key == 'rule_16_urgent_missing' and count > 0:
+                        st.metric(rule_name, count, delta_color="inverse")
+                    else:
+                        st.metric(rule_name, count)
+
+
+def display_rule_results(rule_id: str, rule_name: str, result_df: pd.DataFrame):
+    """Display results for a specific rule."""
+    if result_df.empty:
+        st.success(f"No se encontraron hallazgos para {rule_name}")
+        return
+    
+    st.subheader(f"{rule_name}")
+    
+    # Format timestamps for better display
+    display_df = result_df.copy()
+    timestamp_columns = display_df.select_dtypes(include=['datetime64[ns]']).columns
+    for col in timestamp_columns:
+        display_df[col] = display_df[col].dt.strftime('%Y-%m-%d %H:%M:%S')
+    
+    st.dataframe(
+        display_df,
+        width='stretch',
+        height=400
+    )
+    
+    # Show summary statistics
+    with st.expander(f"Resumen de {rule_name}"):
+        if 'DatabaseName' in display_df.columns:
+            db_count = display_df['DatabaseName'].nunique()
+            st.write(f"**Bases de datos afectadas:** {db_count}")
+        
+        if 'TableName' in display_df.columns:
+            table_count = display_df['TableName'].nunique()
+            st.write(f"**Tablas afectadas:** {table_count}")
+        
+        st.write(f"**Total de hallazgos:** {len(display_df)}")
+
+
+def display_ddl_recommendations(ddl_recommendations: dict):
+    """Display generated DDL recommendations."""
+    st.subheader("Recomendaciones DDL")
+    
+    if not ddl_recommendations:
+        st.info("No hay recomendaciones DDL disponibles")
+        return
+    
+    # Display COLLECT STATISTICS
+    if ddl_recommendations.get('collect_stats'):
+        st.write("**COLLECT STATISTICS (Actualización):**")
+        # Filter out None values before joining
+        collect_statements = [stmt for stmt in ddl_recommendations['collect_stats'] if stmt is not None]
+        if collect_statements:
+            collect_sql = "\n".join(collect_statements)
+            st.code(collect_sql, language='sql')
+            st.download_button(
+                label="Descargar COLLECT STATS",
+                data=collect_sql,
+                file_name=f"collect_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
+                mime="text/plain"
+            )
+        else:
+            st.info("No hay sentencias COLLECT STATISTICS válidas")
+    
+    # Display DROP STATISTICS
+    if ddl_recommendations.get('drop_stats'):
+        st.write("**DROP STATISTICS (Limpieza):**")
+        # Filter out None values before joining
+        drop_statements = [stmt for stmt in ddl_recommendations['drop_stats'] if stmt is not None]
+        if drop_statements:
+            drop_sql = "\n".join(drop_statements)
+            st.code(drop_sql, language='sql')
+            st.download_button(
+                label="Descargar DROP STATS",
+                data=drop_sql,
+                file_name=f"drop_stats_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
+                mime="text/plain"
+            )
+        else:
+            st.info("No hay sentencias DROP STATISTICS válidas")
+    
+    # Display combined recommendations
+    if ddl_recommendations.get('collect_stats') or ddl_recommendations.get('drop_stats'):
+        st.write("**Todas las Recomendaciones:**")
+        recommender = DDLRecommender()
+        combined_output = recommender.format_ddl_output(ddl_recommendations)
+        st.code(combined_output, language='sql')
+        st.download_button(
+            label="Descargar Todas las Recomendaciones",
+            data=combined_output,
+            file_name=f"td_stats_recommendations_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
+            mime="text/plain"
+        )
+
+
 if __name__ == "__main__":
-    main()
+    main_app()

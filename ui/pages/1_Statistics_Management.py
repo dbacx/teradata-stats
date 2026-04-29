@@ -36,9 +36,34 @@ def inject_custom_css():
         font-family: 'Inter', sans-serif !important;
     }
     
+    /* Compact Mode - Reduce margins */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Compact metrics */
     [data-testid="stMetricValue"] {
-        font-size: 3.5rem !important;
+        font-size: 1.8rem !important;
         font-weight: 600 !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Reduce gaps */
+    .stGap {
+        gap: 0.3rem !important;
+    }
+    
+    /* Compact general text */
+    p, div, span {
+        font-size: 0.9rem;
+    }
+    
+    /* Compact tables */
+    [data-testid="stDataFrame"] {
+        font-size: 0.85rem;
     }
     </style>
     """
@@ -57,7 +82,7 @@ def initialize_session_state():
 
 def display_kpi_cards(analyzed_data: dict):
     """Display KPI cards for all 10 components."""
-    st.subheader("📊 KPI Cards - Statistics Management")
+    st.subheader("KPI Cards - Statistics Management")
     
     component_names = [
         ("Unused Objects", "01_unused_objects"),
@@ -86,15 +111,15 @@ def display_kpi_cards(analyzed_data: dict):
     # Display severity summary
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("🔴 CRITICAL", severity_counts['CRITICAL'])
+        st.metric("CRITICAL", severity_counts['CRITICAL'])
     with col2:
-        st.metric("🟠 HIGH", severity_counts['HIGH'])
+        st.metric("HIGH", severity_counts['HIGH'])
     with col3:
-        st.metric("🟡 MEDIUM", severity_counts['MEDIUM'])
+        st.metric("MEDIUM", severity_counts['MEDIUM'])
     with col4:
-        st.metric("🟢 LOW", severity_counts['LOW'])
+        st.metric("LOW", severity_counts['LOW'])
     with col5:
-        st.metric("ℹ️ INFO", severity_counts['INFO'])
+        st.metric("INFO", severity_counts['INFO'])
     
     st.markdown("---")
     
@@ -111,7 +136,7 @@ def display_kpi_cards(analyzed_data: dict):
 
 def display_findings_table(analyzed_data: dict):
     """Display findings table with conditional formatting and pagination."""
-    st.subheader("📋 Tabla de Hallazgos")
+    st.subheader("Tabla de Hallazgos")
     
     # Combine all findings into a single DataFrame
     all_findings = []
@@ -137,7 +162,7 @@ def display_findings_table(analyzed_data: dict):
             all_findings.append(df_copy)
     
     if not all_findings:
-        st.success("✅ No se encontraron hallazgos")
+        st.success("No se encontraron hallazgos")
         return
     
     combined_df = pd.concat(all_findings, ignore_index=True)
@@ -186,7 +211,7 @@ def display_findings_table(analyzed_data: dict):
     # CSV Download
     csv = combined_df.to_csv(index=False)
     st.download_button(
-        label="📥 Descargar CSV",
+        label="Descargar CSV",
         data=csv,
         file_name=f"stats_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv"
@@ -195,7 +220,7 @@ def display_findings_table(analyzed_data: dict):
 
 def display_ddl_actions(analyzed_data: dict):
     """Display DDL remediation statements."""
-    st.subheader("🔧 Acciones DDL de Remediación")
+    st.subheader("Acciones DDL de Remediación")
     
     component_names = {
         "01_unused_objects": "Unused Objects",
@@ -238,7 +263,7 @@ def display_ddl_actions(analyzed_data: dict):
     if all_ddl:
         combined_ddl = "\n".join(all_ddl)
         st.download_button(
-            label="📥 Descargar Todas las Acciones DDL",
+            label="Descargar Todas las Acciones DDL",
             data=combined_ddl,
             file_name=f"stats_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
@@ -250,14 +275,12 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.sidebar.header("� Módulos")
-    
-    st.title("📊 Statistics Management")
+    st.title("Statistics Management")
     st.markdown("*Gestión y Optimización de Estadísticas Teradata*")
     st.markdown("---")
     
     # Sidebar configuration
-    st.sidebar.header("⚙️ Configuración")
+    st.sidebar.header("Configuración")
     
     # Database filter
     database_name = st.sidebar.text_input(
@@ -283,16 +306,16 @@ def main():
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("🚀 Ejecutar Análisis Módulo 2", type="primary"):
+    if st.sidebar.button("Ejecutar Análisis Módulo 2", type="primary"):
         try:
             # Step 1: Connect to database
-            with st.spinner("🔌 Conectando a Teradata..."):
+            with st.spinner("Conectando a Teradata..."):
                 td_conn = TeradataConnection()
                 connection = td_conn.connect()
                 logger.info("Connected to Teradata")
             
             # Step 2: Collect data using StatsCollector
-            with st.spinner("📊 Recolectando datos de estadísticas..."):
+            with st.spinner("Recolectando datos de estadísticas..."):
                 collector = StatsCollector()
                 params = {
                     'stale_days_threshold': stale_days,
@@ -305,7 +328,7 @@ def main():
                 logger.info(f"Collected {total_rows} rows from {len(collected_data)} components")
             
             # Step 3: Analyze data using StatsAnalyzer
-            with st.spinner("🔍 Analizando datos..."):
+            with st.spinner("Analizando datos..."):
                 analyzer = StatsAnalyzer()
                 analyzed_data = analyzer.run(collected_data)
                 st.session_state.mod2_analyzed_data = analyzed_data
@@ -314,7 +337,7 @@ def main():
                 logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod2_findings)}")
             
             connection.close()
-            st.success(f"✅ Análisis completado. Total hallazgos: {len(st.session_state.mod2_findings)}")
+            st.success(f"Análisis completado. Total hallazgos: {len(st.session_state.mod2_findings)}")
             
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
@@ -322,7 +345,7 @@ def main():
     
     # Display results if available
     if st.session_state.mod2_analyzed_data:
-        st.markdown("## 📈 Resultados del Análisis")
+        st.markdown("## Resultados del Análisis")
         
         display_kpi_cards(st.session_state.mod2_analyzed_data)
         st.markdown("---")

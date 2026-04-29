@@ -35,9 +35,34 @@ def inject_custom_css():
         font-family: 'Inter', sans-serif !important;
     }
     
+    /* Compact Mode - Reduce margins */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Compact metrics */
     [data-testid="stMetricValue"] {
-        font-size: 3.5rem !important;
+        font-size: 1.8rem !important;
         font-weight: 600 !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Reduce gaps */
+    .stGap {
+        gap: 0.3rem !important;
+    }
+    
+    /* Compact general text */
+    p, div, span {
+        font-size: 0.9rem;
+    }
+    
+    /* Compact tables */
+    [data-testid="stDataFrame"] {
+        font-size: 0.85rem;
     }
     
     .checklist-item {
@@ -79,7 +104,7 @@ def initialize_session_state():
 
 def display_kpi_cards(analyzed_data: dict):
     """Display KPI cards for config assessment."""
-    st.subheader("📊 KPI Cards - Config Assessment")
+    st.subheader("KPI Cards - Config Assessment")
     
     # Calculate metrics
     dbql_rules_df = analyzed_data.get('02_dbql_rules', pd.DataFrame())
@@ -101,9 +126,9 @@ def display_kpi_cards(analyzed_data: dict):
         if not node_rate.empty and 'RuleValue' in node_rate.columns:
             try:
                 rate = int(node_rate.iloc[0]['RuleValue'])
-                resusage_status = "⚠️" if rate > 10 else "✅"
+                resusage_status = "WARNING" if rate > 10 else "OK"
             except (ValueError, TypeError):
-                resusage_status = "❓"
+                resusage_status = "UNKNOWN"
     
     # DBQL Thresholds Configured
     thresholds_df = analyzed_data.get('03_dbql_thresholds', pd.DataFrame())
@@ -112,20 +137,20 @@ def display_kpi_cards(analyzed_data: dict):
     # Display KPIs
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("📋 Reglas DBQL Activas", active_dbql_rules)
+        st.metric("Reglas DBQL Activas", active_dbql_rules)
     with col2:
-        st.metric("🗄️ Tablas de Log Críticas", critical_tables)
+        st.metric("Tablas de Log Críticas", critical_tables)
     with col3:
-        st.metric("⚙️ Estado de ResUsage", resusage_status)
+        st.metric("Estado de ResUsage", resusage_status)
     with col4:
-        st.metric("🎯 Thresholds Configurados", thresholds_configured)
+        st.metric("Thresholds Configurados", thresholds_configured)
     
     st.markdown("---")
 
 
 def display_config_checklist(analyzed_data: dict):
     """Display configuration status as a visual checklist."""
-    st.subheader("✅ Checklist de Configuración")
+    st.subheader("Checklist de Configuración")
     
     checklist_items = []
     
@@ -163,7 +188,7 @@ def display_config_checklist(analyzed_data: dict):
     dbql_tables_df = analyzed_data.get('04_dbql_tables_health', pd.DataFrame())
     
     # Diagnostic Mode: Show raw DBQL Tables data
-    with st.expander("🔍 Modo Diagnóstico: Datos crudos DBQL Tables"):
+    with st.expander("Modo Diagnóstico: Datos crudos DBQL Tables"):
         st.dataframe(dbql_tables_df, width='stretch')
     
     if not dbql_tables_df.empty:
@@ -236,7 +261,7 @@ def display_config_checklist(analyzed_data: dict):
     
     # Display checklist
     for item in checklist_items:
-        icon = '✅' if item['status'] == 'success' else '⚠️' if item['status'] == 'warning' else '❌' if item['status'] == 'danger' else '❓'
+        icon = 'OK' if item['status'] == 'success' else 'WARNING' if item['status'] == 'warning' else 'ERROR' if item['status'] == 'danger' else 'UNKNOWN'
         css_class = f"checklist-{item['status']}"
         st.markdown(
             f"""
@@ -256,7 +281,7 @@ def display_config_checklist(analyzed_data: dict):
 
 def display_charts(analyzed_data: dict):
     """Display charts for config assessment."""
-    st.subheader("📈 Visualizaciones")
+    st.subheader("Visualizaciones")
     
     col1, col2 = st.columns(2)
     
@@ -277,7 +302,7 @@ def display_charts(analyzed_data: dict):
                 width='stretch'
             )
         else:
-            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico de reglas DBQL.")
+            st.warning("No hay datos suficientes o faltan columnas para generar el gráfico de reglas DBQL.")
     
     # Bar Chart: DBQL Tables Size
     with col2:
@@ -296,12 +321,12 @@ def display_charts(analyzed_data: dict):
                 width='stretch'
             )
         else:
-            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico de tamaño de tablas.")
+            st.warning("No hay datos suficientes o faltan columnas para generar el gráfico de tamaño de tablas.")
 
 
 def display_findings_table(analyzed_data: dict):
     """Display findings table with conditional formatting."""
-    st.subheader("📋 Tabla de Hallazgos")
+    st.subheader("Tabla de Hallazgos")
     
     # Combine all findings into a single DataFrame
     all_findings = []
@@ -321,7 +346,7 @@ def display_findings_table(analyzed_data: dict):
             all_findings.append(df_copy)
     
     if not all_findings:
-        st.success("✅ No se encontraron hallazgos")
+        st.success("No se encontraron hallazgos")
         return
     
     combined_df = pd.concat(all_findings, ignore_index=True)
@@ -375,7 +400,7 @@ def display_findings_table(analyzed_data: dict):
     # CSV Download
     csv = combined_df.to_csv(index=False)
     st.download_button(
-        label="📥 Descargar CSV",
+        label="Descargar CSV",
         data=csv,
         file_name=f"config_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv"
@@ -384,7 +409,7 @@ def display_findings_table(analyzed_data: dict):
 
 def display_ddl_actions(analyzed_data: dict):
     """Display DDL remediation statements."""
-    st.subheader("🔧 Acciones DDL de Remediación")
+    st.subheader("Acciones DDL de Remediación")
     
     component_names = {
         "01_resusage_rules": "ResUsage Rules",
@@ -423,7 +448,7 @@ def display_ddl_actions(analyzed_data: dict):
     if all_ddl:
         combined_ddl = "\n".join(all_ddl)
         st.download_button(
-            label="📥 Descargar Todas las Acciones DDL",
+            label="Descargar Todas las Acciones DDL",
             data=combined_ddl,
             file_name=f"config_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
@@ -435,32 +460,30 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.sidebar.header("📁 Módulos")
-    
-    st.title("⚙️ Database Query Logging")
+    st.title("Database Query Logging")
     st.markdown("*Evaluación y Optimización de Configuración de Logging en Teradata*")
     st.markdown("---")
     
     # Sidebar configuration
-    st.sidebar.header("⚙️ Configuración")
+    st.sidebar.header("Configuración")
     
     # Info about ResUsageRules
     st.sidebar.info(
-        "ℹ️ **Nota:** La vista DBC.ResUsageRules puede no estar disponible "
+        "**Nota:** La vista DBC.ResUsageRules puede no estar disponible "
         "en todas las versiones de Teradata o puede requerir permisos especiales."
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("🚀 Ejecutar Análisis Módulo 5", type="primary"):
+    if st.sidebar.button("Ejecutar Análisis Módulo 5", type="primary"):
         try:
             # Step 1: Connect to database
-            with st.spinner("🔌 Conectando a Teradata..."):
+            with st.spinner("Conectando a Teradata..."):
                 td_conn = TeradataConnection()
                 connection = td_conn.connect()
                 logger.info("Connected to Teradata")
             
             # Step 2: Collect data using ConfigCollector
-            with st.spinner("📊 Recolectando datos de configuración..."):
+            with st.spinner("Recolectando datos de configuración..."):
                 collector = ConfigCollector()
                 collected_data = collector.collect(connection)
                 st.session_state.mod5_collected_data = collected_data
@@ -469,7 +492,7 @@ def main():
                 logger.info(f"Collected {total_rows} rows from {len(collected_data)} components")
             
             # Step 3: Analyze data using ConfigAnalyzer
-            with st.spinner("🔍 Analizando datos..."):
+            with st.spinner("Analizando datos..."):
                 analyzer = ConfigAnalyzer()
                 analyzed_data = analyzer.run(collected_data)
                 st.session_state.mod5_analyzed_data = analyzed_data
@@ -478,7 +501,7 @@ def main():
                 logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod5_findings)}")
             
             connection.close()
-            st.success(f"✅ Análisis completado. Total hallazgos: {len(st.session_state.mod5_findings)}")
+            st.success(f"Análisis completado. Total hallazgos: {len(st.session_state.mod5_findings)}")
             
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
@@ -486,7 +509,7 @@ def main():
     
     # Display results if available
     if st.session_state.mod5_analyzed_data:
-        st.markdown("## 📈 Resultados del Análisis")
+        st.markdown("## Resultados del Análisis")
         
         display_kpi_cards(st.session_state.mod5_analyzed_data)
         st.markdown("---")

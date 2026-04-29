@@ -37,9 +37,34 @@ def inject_custom_css():
         font-family: 'Inter', sans-serif !important;
     }
     
+    /* Compact Mode - Reduce margins */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Compact metrics */
     [data-testid="stMetricValue"] {
-        font-size: 3.5rem !important;
+        font-size: 1.8rem !important;
         font-weight: 600 !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Reduce gaps */
+    .stGap {
+        gap: 0.3rem !important;
+    }
+    
+    /* Compact general text */
+    p, div, span {
+        font-size: 0.9rem;
+    }
+    
+    /* Compact tables */
+    [data-testid="stDataFrame"] {
+        font-size: 0.85rem;
     }
     </style>
     """
@@ -58,7 +83,7 @@ def initialize_session_state():
 
 def display_kpi_cards(analyzed_data: dict):
     """Display KPI cards for security assessment."""
-    st.subheader("📊 KPI Cards - Security Assessment")
+    st.subheader("KPI Cards - Security Assessment")
     
     # Calculate metrics
     password_df = analyzed_data.get('01_password_expiry', pd.DataFrame())
@@ -85,22 +110,22 @@ def display_kpi_cards(analyzed_data: dict):
     # Display KPIs
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("⚠️ Usuarios en Riesgo", users_at_risk)
+        st.metric("Usuarios en Riesgo", users_at_risk)
     with col2:
-        st.metric("🔑 Permisos Directos", direct_grants_count)
+        st.metric("Permisos Directos", direct_grants_count)
     with col3:
-        st.metric("👤 Cuentas Inactivas", inactive_accounts)
+        st.metric("Cuentas Inactivas", inactive_accounts)
     with col4:
-        st.metric("📋 Sin Profile", without_profile)
+        st.metric("Sin Profile", without_profile)
     with col5:
-        st.metric("👥 Sin Rol", without_role)
+        st.metric("Sin Rol", without_role)
     
     st.markdown("---")
 
 
 def display_charts(analyzed_data: dict):
     """Display charts for security assessment."""
-    st.subheader("📈 Visualizaciones")
+    st.subheader("Visualizaciones")
     
     col1, col2 = st.columns(2)
     
@@ -131,7 +156,7 @@ def display_charts(analyzed_data: dict):
             
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.warning("⚠️ No hay datos suficientes para generar el gráfico de distribución de usuarios.")
+            st.warning("No hay datos suficientes para generar el gráfico de distribución de usuarios.")
     
     # Bar Chart: Direct Grants by User
     with col2:
@@ -151,12 +176,12 @@ def display_charts(analyzed_data: dict):
                 width='stretch'
             )
         else:
-            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico de permisos directos.")
+            st.warning("No hay datos suficientes o faltan columnas para generar el gráfico de permisos directos.")
 
 
 def display_findings_table(analyzed_data: dict):
     """Display findings table with conditional formatting."""
-    st.subheader("📋 Tabla de Hallazgos")
+    st.subheader("Tabla de Hallazgos")
     
     # Combine all findings into a single DataFrame
     all_findings = []
@@ -177,7 +202,7 @@ def display_findings_table(analyzed_data: dict):
             all_findings.append(df_copy)
     
     if not all_findings:
-        st.success("✅ No se encontraron hallazgos")
+        st.success("No se encontraron hallazgos")
         return
     
     combined_df = pd.concat(all_findings, ignore_index=True)
@@ -226,7 +251,7 @@ def display_findings_table(analyzed_data: dict):
     # CSV Download
     csv = combined_df.to_csv(index=False)
     st.download_button(
-        label="📥 Descargar CSV",
+        label="Descargar CSV",
         data=csv,
         file_name=f"security_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv"
@@ -235,7 +260,7 @@ def display_findings_table(analyzed_data: dict):
 
 def display_ddl_actions(analyzed_data: dict):
     """Display DDL remediation statements."""
-    st.subheader("🔧 Acciones DDL de Remediación")
+    st.subheader("Acciones DDL de Remediación")
     
     component_names = {
         "01_password_expiry": "Password Expiry",
@@ -275,7 +300,7 @@ def display_ddl_actions(analyzed_data: dict):
     if all_ddl:
         combined_ddl = "\n".join(all_ddl)
         st.download_button(
-            label="📥 Descargar Todas las Acciones DDL",
+            label="Descargar Todas las Acciones DDL",
             data=combined_ddl,
             file_name=f"security_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
@@ -287,14 +312,12 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.sidebar.header("� Módulos")
-    
-    st.title("🔐 Security")
+    st.title("Security")
     st.markdown("*Evaluación y Optimización de Seguridad en Teradata*")
     st.markdown("---")
     
     # Sidebar configuration
-    st.sidebar.header("⚙️ Configuración")
+    st.sidebar.header("Configuración")
     
     # Threshold configuration
     password_expiry_days = st.sidebar.slider(
@@ -314,16 +337,16 @@ def main():
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("🚀 Ejecutar Análisis Módulo 6", type="primary"):
+    if st.sidebar.button("Ejecutar Análisis Módulo 6", type="primary"):
         try:
             # Step 1: Connect to database
-            with st.spinner("🔌 Conectando a Teradata..."):
+            with st.spinner("Conectando a Teradata..."):
                 td_conn = TeradataConnection()
                 connection = td_conn.connect()
                 logger.info("Connected to Teradata")
             
             # Step 2: Collect data using SecurityCollector
-            with st.spinner("📊 Recolectando datos de seguridad..."):
+            with st.spinner("Recolectando datos de seguridad..."):
                 collector = SecurityCollector()
                 params = {
                     'password_expiry_days_threshold': password_expiry_days,
@@ -336,7 +359,7 @@ def main():
                 logger.info(f"Collected {total_rows} rows from {len(collected_data)} components")
             
             # Step 3: Analyze data using SecurityAnalyzer
-            with st.spinner("🔍 Analizando datos..."):
+            with st.spinner("Analizando datos..."):
                 analyzer = SecurityAnalyzer()
                 analyzed_data = analyzer.run(collected_data)
                 st.session_state.mod6_analyzed_data = analyzed_data
@@ -345,7 +368,7 @@ def main():
                 logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod6_findings)}")
             
             connection.close()
-            st.success(f"✅ Análisis completado. Total hallazgos: {len(st.session_state.mod6_findings)}")
+            st.success(f"Análisis completado. Total hallazgos: {len(st.session_state.mod6_findings)}")
             
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
@@ -353,7 +376,7 @@ def main():
     
     # Display results if available
     if st.session_state.mod6_analyzed_data:
-        st.markdown("## 📈 Resultados del Análisis")
+        st.markdown("## Resultados del Análisis")
         
         display_kpi_cards(st.session_state.mod6_analyzed_data)
         st.markdown("---")
