@@ -84,6 +84,12 @@ class SpaceAnalyzer(BaseAnalyzer):
         DDL: No direct DDL, requires capacity planning
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 01_db_space_utilization")
+            return df
+        
+        required_columns = ['DatabaseName', 'Usage_Pct', 'CurrentPerm_TB', 'MaxPerm_TB']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 01_db_space_utilization. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -156,6 +162,12 @@ class SpaceAnalyzer(BaseAnalyzer):
         DDL: DROP TABLE
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 02_unused_tables_space")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'Size_GB']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 02_unused_tables_space. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -211,6 +223,12 @@ class SpaceAnalyzer(BaseAnalyzer):
         DDL: ALTER TABLE ... ADD ... COMPRESS
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 03_mvc_candidates")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'ColumnName', 'ColumnType', 'TableSize_GB']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 03_mvc_candidates. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -257,6 +275,12 @@ class SpaceAnalyzer(BaseAnalyzer):
         DDL: No direct DDL, requires monitoring
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 04_top_tables")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'Size_GB', 'PeakSize_GB', 'AMP_Count']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 04_top_tables. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -291,6 +315,12 @@ class SpaceAnalyzer(BaseAnalyzer):
         DDL: Requires table redesign or statistics
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 05_skewed_tables")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'Skew_Pct', 'AMP_Count']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 05_skewed_tables. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()

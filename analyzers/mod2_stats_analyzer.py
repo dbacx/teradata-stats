@@ -109,6 +109,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: DROP STATISTICS
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 01_unused_objects")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'Size_GB']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 01_unused_objects. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -161,6 +167,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS ... USING SAMPLE
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 02_sample_candidates")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'ColumnName', 'Size_GB', 'Uniqueness_Ratio', 'SampleSizePct']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 02_sample_candidates. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -200,6 +212,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS ... COLUMN (PARTITION)
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 03_missing_partition")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'PartitioningLevels']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 03_missing_partition. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -250,6 +268,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 04_missing_table")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'TableKind']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 04_missing_table. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -286,6 +310,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS ... COLUMN (index_columns)
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 05_missing_index")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'IndexType', 'IndexName']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 05_missing_index. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -338,6 +368,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS (refresh)
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 06_stale_stats")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'Last_Collect_Date']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 06_stale_stats. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -374,6 +410,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS (refresh)
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 07_zero_stats")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'Stats_RowCount', 'Actual_Size_GB']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 07_zero_stats. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -411,6 +453,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS ... WITH MAXVALUELENGTH
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 08_multicolumn")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'ColumnName', 'ExpressionCount', 'MaxValueLength']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 08_multicolumn. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -449,6 +497,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: Review and potentially adjust
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 09_skipped_sample")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'SampleSizePct', 'StatsSkipCount']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 09_skipped_sample. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()
@@ -488,6 +542,12 @@ class StatsAnalyzer(BaseAnalyzer):
         DDL: COLLECT STATISTICS on system tables
         """
         if df.empty:
+            logger.warning("DataFrame is empty for 10_dbc_recommendations")
+            return df
+        
+        required_columns = ['DatabaseName', 'TableName', 'TableKind']
+        if not all(col in df.columns for col in required_columns):
+            logger.warning(f"Missing required columns for 10_dbc_recommendations. Required: {required_columns}, Available: {df.columns.tolist()}")
             return df
         
         result_df = df.copy()

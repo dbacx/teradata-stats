@@ -3,7 +3,7 @@
 -- Aggregates CurrentPerm from DBC.TableSizeV
 
 LOCKING ROW FOR ACCESS
-SELECT 
+SELECT TOP 50
     DatabaseName,
     TableName,
     CAST(SUM(CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Size_GB,
@@ -12,5 +12,4 @@ SELECT
 FROM DBC.TableSizeV
 WHERE DatabaseName NOT IN ({system_databases})
 GROUP BY DatabaseName, TableName
-ORDER BY Size_GB DESC
-FETCH FIRST 50 ROWS ONLY;
+ORDER BY Size_GB DESC;

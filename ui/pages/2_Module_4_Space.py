@@ -113,7 +113,7 @@ def display_charts(analyzed_data: dict):
     with col1:
         st.write("**Top 10 Tablas por Tamaño**")
         top_df = analyzed_data.get('04_top_tables', pd.DataFrame())
-        if not top_df.empty:
+        if not top_df.empty and 'DatabaseName' in top_df.columns and 'TableName' in top_df.columns and 'Size_GB' in top_df.columns:
             top_10 = top_df.head(10).copy()
             top_10['Table_Label'] = top_10['DatabaseName'] + '.' + top_10['TableName']
             top_10 = top_10.sort_values('Size_GB', ascending=True)
@@ -123,16 +123,16 @@ def display_charts(analyzed_data: dict):
                 x='Size_GB',
                 y='Table_Label',
                 horizontal=True,
-                use_container_width=True
+                width='stretch'
             )
         else:
-            st.info("No hay datos de tablas disponibles")
+            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico del Top 10 de Tablas.")
     
     # Database Usage Chart
     with col2:
         st.write("**Uso de Bases de Datos (Top 10)**")
         db_df = analyzed_data.get('01_db_space_utilization', pd.DataFrame())
-        if not db_df.empty:
+        if not db_df.empty and 'DatabaseName' in db_df.columns and 'Usage_Pct' in db_df.columns:
             top_10_db = db_df.head(10).copy()
             top_10_db = top_10_db.sort_values('Usage_Pct', ascending=True)
             
@@ -141,10 +141,10 @@ def display_charts(analyzed_data: dict):
                 x='Usage_Pct',
                 y='DatabaseName',
                 horizontal=True,
-                use_container_width=True
+                width='stretch'
             )
         else:
-            st.info("No hay datos de bases de datos disponibles")
+            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico de Uso de Bases de Datos.")
 
 
 def display_findings_table(analyzed_data: dict):
