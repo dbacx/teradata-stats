@@ -1,13 +1,12 @@
 """
-Module 6: User & Security Management Page
+Module 4: Space Assessment Page
 
-This page provides a dedicated interface for the Security Assessment module,
-using the new SecurityCollector and SecurityAnalyzer classes.
+This page provides a dedicated interface for the Space Assessment module,
+using the new SpaceCollector and SpaceAnalyzer classes.
 """
 
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 from datetime import datetime
 import logging
 import sys
@@ -18,8 +17,8 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod6_security_collector import SecurityCollector
-from analyzers.mod6_security_analyzer import SecurityAnalyzer
+from collectors.mod4_space_collector import SpaceCollector
+from analyzers.mod4_space_analyzer import SpaceAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging
@@ -48,110 +47,104 @@ def inject_custom_css():
 
 def initialize_session_state():
     """Initialize Streamlit session state variables."""
-    if 'mod6_collected_data' not in st.session_state:
-        st.session_state.mod6_collected_data = None
-    if 'mod6_analyzed_data' not in st.session_state:
-        st.session_state.mod6_analyzed_data = None
-    if 'mod6_findings' not in st.session_state:
-        st.session_state.mod6_findings = None
+    if 'mod4_collected_data' not in st.session_state:
+        st.session_state.mod4_collected_data = None
+    if 'mod4_analyzed_data' not in st.session_state:
+        st.session_state.mod4_analyzed_data = None
+    if 'mod4_findings' not in st.session_state:
+        st.session_state.mod4_findings = None
 
 
 def display_kpi_cards(analyzed_data: dict):
-    """Display KPI cards for security assessment."""
-    st.subheader("📊 KPI Cards - Security Assessment")
+    """Display KPI cards for space assessment."""
+    st.subheader("📊 KPI Cards - Space Assessment")
     
     # Calculate metrics
-    password_df = analyzed_data.get('01_password_expiry', pd.DataFrame())
-    profile_df = analyzed_data.get('02_users_without_profile', pd.DataFrame())
-    direct_grants_df = analyzed_data.get('03_direct_grants', pd.DataFrame())
-    stagnant_df = analyzed_data.get('04_stagnant_users', pd.DataFrame())
-    role_df = analyzed_data.get('05_users_without_role', pd.DataFrame())
+    db_util_df = analyzed_data.get('01_db_space_utilization', pd.DataFrame())
+    unused_df = analyzed_data.get('02_unused_tables_space', pd.DataFrame())
+    mvc_df = analyzed_data.get('03_mvc_candidates', pd.DataFrame())
+    top_df = analyzed_data.get('04_top_tables', pd.DataFrame())
     
-    # Users at Risk (password expiry + stagnant users)
-    users_at_risk = len(password_df) + len(stagnant_df)
+    # Terabytes Analyzed
+    total_tb = 0
+    if not db_util_df.empty:
+        total_tb = db_util_df['CurrentPerm_TB'].sum()
     
-    # Direct Grants Detected
-    direct_grants_count = len(direct_grants_df)
+    # GB Recoverable (unused tables)
+    recoverable_gb = 0
+    if not unused_df.empty:
+        recoverable_gb = unused_df['Size_GB'].sum()
     
-    # Inactive Accounts (stagnant users)
-    inactive_accounts = len(stagnant_df)
+    # Critical Databases
+    critical_dbs = 0
+    if not db_util_df.empty:
+        critical_dbs = len(db_util_df[db_util_df['Usage_Pct'] > 80])
     
-    # Users Without Profile
-    without_profile = len(profile_df)
+    # MVC Candidates
+    mvc_count = len(mvc_df)
     
-    # Users Without Role
-    without_role = len(role_df)
+    # Skewed Tables
+    skewed_df = analyzed_data.get('05_skewed_tables', pd.DataFrame())
+    skewed_count = len(skewed_df)
     
     # Display KPIs
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
-        st.metric("⚠️ Usuarios en Riesgo", users_at_risk)
+        st.metric("📦 TB Analizados", f"{total_tb:.2f}")
     with col2:
-        st.metric("🔑 Permisos Directos", direct_grants_count)
+        st.metric("♻️ GB Recuperables", f"{recoverable_gb:.2f}")
     with col3:
-        st.metric("👤 Cuentas Inactivas", inactive_accounts)
+        st.metric("🔴 BDs Críticas", critical_dbs)
     with col4:
-        st.metric("📋 Sin Profile", without_profile)
+        st.metric("🗜️ MVC Candidatos", mvc_count)
     with col5:
-        st.metric("👥 Sin Rol", without_role)
+        st.metric("⚡ Tablas Skewed", skewed_count)
     
     st.markdown("---")
 
 
 def display_charts(analyzed_data: dict):
-    """Display charts for security assessment."""
+    """Display charts for top tables and database usage."""
     st.subheader("📈 Visualizaciones")
     
     col1, col2 = st.columns(2)
     
-    # Donut Chart: Healthy vs At-Risk Users
+    # Top 10 Tables Chart
     with col1:
-        st.write("**Usuarios Sanos vs en Riesgo**")
-        password_df = analyzed_data.get('01_password_expiry', pd.DataFrame())
-        stagnant_df = analyzed_data.get('04_stagnant_users', pd.DataFrame())
-        
-        if not password_df.empty and not stagnant_df.empty:
-            at_risk = len(password_df) + len(stagnant_df)
-            # Assume total users estimate (this would ideally come from a total count query)
-            total_users = max(at_risk + 50, 100)  # Placeholder for total users
-            healthy = total_users - at_risk
-            
-            fig = go.Figure(data=[go.Pie(
-                labels=['Sanos', 'En Riesgo'],
-                values=[healthy, at_risk],
-                hole=0.4,
-                marker=dict(colors=['#90EE90', '#FF6B6B'])
-            )])
-            
-            fig.update_layout(
-                title="Distribución de Usuarios",
-                showlegend=True,
-                height=400
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("⚠️ No hay datos suficientes para generar el gráfico de distribución de usuarios.")
-    
-    # Bar Chart: Direct Grants by User
-    with col2:
-        st.write("**Permisos Directos por Usuario (Top 10)**")
-        direct_grants_df = analyzed_data.get('03_direct_grants', pd.DataFrame())
-        
-        if not direct_grants_df.empty and 'UserName' in direct_grants_df.columns:
-            grants_by_user = direct_grants_df.groupby('UserName').size().reset_index(name='GrantCount')
-            top_10 = grants_by_user.nlargest(10, 'GrantCount')
-            top_10 = top_10.sort_values('GrantCount', ascending=True)
+        st.write("**Top 10 Tablas por Tamaño**")
+        top_df = analyzed_data.get('04_top_tables', pd.DataFrame())
+        if not top_df.empty and 'DatabaseName' in top_df.columns and 'TableName' in top_df.columns and 'Size_GB' in top_df.columns:
+            top_10 = top_df.head(10).copy()
+            top_10['Table_Label'] = top_10['DatabaseName'] + '.' + top_10['TableName']
+            top_10 = top_10.sort_values('Size_GB', ascending=True)
             
             st.bar_chart(
                 data=top_10,
-                x='GrantCount',
-                y='UserName',
+                x='Size_GB',
+                y='Table_Label',
                 horizontal=True,
                 width='stretch'
             )
         else:
-            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico de permisos directos.")
+            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico del Top 10 de Tablas.")
+    
+    # Database Usage Chart
+    with col2:
+        st.write("**Uso de Bases de Datos (Top 10)**")
+        db_df = analyzed_data.get('01_db_space_utilization', pd.DataFrame())
+        if not db_df.empty and 'DatabaseName' in db_df.columns and 'Usage_Pct' in db_df.columns:
+            top_10_db = db_df.head(10).copy()
+            top_10_db = top_10_db.sort_values('Usage_Pct', ascending=True)
+            
+            st.bar_chart(
+                data=top_10_db,
+                x='Usage_Pct',
+                y='DatabaseName',
+                horizontal=True,
+                width='stretch'
+            )
+        else:
+            st.warning("⚠️ No hay datos suficientes o faltan columnas para generar el gráfico de Uso de Bases de Datos.")
 
 
 def display_findings_table(analyzed_data: dict):
@@ -162,11 +155,11 @@ def display_findings_table(analyzed_data: dict):
     all_findings = []
     
     component_names = {
-        "01_password_expiry": "Password Expiry",
-        "02_users_without_profile": "Users Without Profile",
-        "03_direct_grants": "Direct Grants",
-        "04_stagnant_users": "Stagnant Users",
-        "05_users_without_role": "Users Without Role"
+        "01_db_space_utilization": "DB Space Utilization",
+        "02_unused_tables_space": "Unused Tables Space",
+        "03_mvc_candidates": "MVC Candidates",
+        "04_top_tables": "Top Tables",
+        "05_skewed_tables": "Skewed Tables"
     }
     
     for component_key, component_name in component_names.items():
@@ -228,7 +221,7 @@ def display_findings_table(analyzed_data: dict):
     st.download_button(
         label="📥 Descargar CSV",
         data=csv,
-        file_name=f"security_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        file_name=f"space_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv"
     )
 
@@ -238,15 +231,15 @@ def display_ddl_actions(analyzed_data: dict):
     st.subheader("🔧 Acciones DDL de Remediación")
     
     component_names = {
-        "01_password_expiry": "Password Expiry",
-        "02_users_without_profile": "Users Without Profile",
-        "03_direct_grants": "Direct Grants",
-        "04_stagnant_users": "Stagnant Users",
-        "05_users_without_role": "Users Without Role"
+        "01_db_space_utilization": "DB Space Utilization",
+        "02_unused_tables_space": "Unused Tables Space",
+        "03_mvc_candidates": "MVC Candidates",
+        "04_top_tables": "Top Tables",
+        "05_skewed_tables": "Skewed Tables"
     }
     
     # Group by DDL_Action
-    ddl_actions = {'EXPIRE_PASSWORD': [], 'ASSIGN_PROFILE': [], 'USE_ROLES': [], 'REVOKE_LOGON': [], 'ASSIGN_ROLE': []}
+    ddl_actions = {'DROP': [], 'ADD_COMPRESS': [], 'MONITOR': [], 'REDESIGN': []}
     
     for component_key, component_name in component_names.items():
         df = analyzed_data.get(component_key, pd.DataFrame())
@@ -277,7 +270,7 @@ def display_ddl_actions(analyzed_data: dict):
         st.download_button(
             label="📥 Descargar Todas las Acciones DDL",
             data=combined_ddl,
-            file_name=f"security_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
+            file_name=f"space_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
         )
 
@@ -287,32 +280,40 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.title("🔐 Module 6: User & Security Management")
-    st.markdown("*Evaluación y Optimización de Seguridad en Teradata*")
+    st.sidebar.header("� Módulos")
+    
+    st.title("🗄️ Space")
+    st.markdown("*Evaluación y Optimización de Espacio en Teradata*")
     st.markdown("---")
     
     # Sidebar configuration
     st.sidebar.header("⚙️ Configuración")
     
-    # Threshold configuration
-    password_expiry_days = st.sidebar.slider(
-        "Umbral Días para Expiración de Password",
-        min_value=30,
-        max_value=365,
-        value=THRESHOLDS.get('password_expiry_days', 90),
-        help="Usuarios con password sin cambio por más de este número de días se considerarán en riesgo"
+    # Database filter
+    database_name = st.sidebar.text_input(
+        "Filtrar por Base de Datos (opcional)",
+        placeholder="Ej: USER_DB, ALL para todas"
     )
     
+    # Threshold configuration
     unused_days = st.sidebar.slider(
-        "Umbral Días para Usuarios Inactivos",
+        "Umbral Días para Tablas Sin Uso",
         min_value=30,
         max_value=365,
-        value=THRESHOLDS.get('unused_object_days', 30),
-        help="Usuarios sin acceso por más de este número de días se considerarán inactivos"
+        value=THRESHOLDS['unused_object_days'],
+        help="Tablas sin acceso por más de este número de días se considerarán sin uso"
+    )
+    
+    skew_threshold = st.sidebar.slider(
+        "Umbral % Skew para Tablas",
+        min_value=10,
+        max_value=100,
+        value=THRESHOLDS['pi_skew_pct'],
+        help="Porcentaje de skew para identificar tablas desbalanceadas"
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("🚀 Ejecutar Análisis Módulo 6", type="primary"):
+    if st.sidebar.button("🚀 Ejecutar Análisis Módulo 4", type="primary"):
         try:
             # Step 1: Connect to database
             with st.spinner("🔌 Conectando a Teradata..."):
@@ -320,46 +321,46 @@ def main():
                 connection = td_conn.connect()
                 logger.info("Connected to Teradata")
             
-            # Step 2: Collect data using SecurityCollector
-            with st.spinner("📊 Recolectando datos de seguridad..."):
-                collector = SecurityCollector()
+            # Step 2: Collect data using SpaceCollector
+            with st.spinner("📊 Recolectando datos de espacio..."):
+                collector = SpaceCollector()
                 params = {
-                    'password_expiry_days_threshold': password_expiry_days,
-                    'unused_days_threshold': unused_days
+                    'unused_days_threshold': unused_days,
+                    'skew_pct_threshold': skew_threshold
                 }
                 collected_data = collector.collect(connection, params=params)
-                st.session_state.mod6_collected_data = collected_data
+                st.session_state.mod4_collected_data = collected_data
                 
                 total_rows = sum(len(df) for df in collected_data.values())
                 logger.info(f"Collected {total_rows} rows from {len(collected_data)} components")
             
-            # Step 3: Analyze data using SecurityAnalyzer
+            # Step 3: Analyze data using SpaceAnalyzer
             with st.spinner("🔍 Analizando datos..."):
-                analyzer = SecurityAnalyzer()
+                analyzer = SpaceAnalyzer()
                 analyzed_data = analyzer.run(collected_data)
-                st.session_state.mod6_analyzed_data = analyzed_data
-                st.session_state.mod6_findings = analyzer.get_findings()
+                st.session_state.mod4_analyzed_data = analyzed_data
+                st.session_state.mod4_findings = analyzer.get_findings()
                 
-                logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod6_findings)}")
+                logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod4_findings)}")
             
             connection.close()
-            st.success(f"✅ Análisis completado. Total hallazgos: {len(st.session_state.mod6_findings)}")
+            st.success(f"✅ Análisis completado. Total hallazgos: {len(st.session_state.mod4_findings)}")
             
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
             logger.error(f"Analysis error: {str(e)}")
     
     # Display results if available
-    if st.session_state.mod6_analyzed_data:
+    if st.session_state.mod4_analyzed_data:
         st.markdown("## 📈 Resultados del Análisis")
         
-        display_kpi_cards(st.session_state.mod6_analyzed_data)
+        display_kpi_cards(st.session_state.mod4_analyzed_data)
         st.markdown("---")
-        display_charts(st.session_state.mod6_analyzed_data)
+        display_charts(st.session_state.mod4_analyzed_data)
         st.markdown("---")
-        display_findings_table(st.session_state.mod6_analyzed_data)
+        display_findings_table(st.session_state.mod4_analyzed_data)
         st.markdown("---")
-        display_ddl_actions(st.session_state.mod6_analyzed_data)
+        display_ddl_actions(st.session_state.mod4_analyzed_data)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,6 @@ SELECT
     RuleType,
     LoggingOption,
     IsActive
-FROM DBC.DBQLRules
-WHERE IsActive = 'Y'
+FROM DBC.DBQLRulesV
+WHERE UPPER(IsActive) = 'Y'
 ORDER BY UserName, AccountString, RuleType;

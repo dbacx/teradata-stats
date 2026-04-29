@@ -250,7 +250,9 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.title("📊 Module 2: Statistics Management")
+    st.sidebar.header("� Módulos")
+    
+    st.title("📊 Statistics Management")
     st.markdown("*Gestión y Optimización de Estadísticas Teradata*")
     st.markdown("---")
     

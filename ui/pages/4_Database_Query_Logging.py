@@ -161,9 +161,21 @@ def display_config_checklist(analyzed_data: dict):
     
     # Check 3: DBQL Tables Exist
     dbql_tables_df = analyzed_data.get('04_dbql_tables_health', pd.DataFrame())
+    
+    # Diagnostic Mode: Show raw DBQL Tables data
+    with st.expander("🔍 Modo Diagnóstico: Datos crudos DBQL Tables"):
+        st.dataframe(dbql_tables_df, width='stretch')
+    
     if not dbql_tables_df.empty:
         expected_tables = ['DBQLogTbl', 'DBQLogTbl_Hst', 'DBQLObjTbl', 'DBQLObjTbl_Hst']
-        existing = set(dbql_tables_df['TableName'].tolist())
+        # Detect dynamically the column name (ViewName or TableName)
+        col_name = 'ViewName' if 'ViewName' in dbql_tables_df.columns else 'TableName'
+        
+        if col_name in dbql_tables_df.columns:
+            existing = set(dbql_tables_df[col_name].tolist())
+        else:
+            existing = set()
+        
         missing = set(expected_tables) - existing
         if not missing:
             checklist_items.append({
@@ -423,7 +435,9 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    st.title("⚙️ Module 5: Data Collection & Logging Config")
+    st.sidebar.header("📁 Módulos")
+    
+    st.title("⚙️ Database Query Logging")
     st.markdown("*Evaluación y Optimización de Configuración de Logging en Teradata*")
     st.markdown("---")
     

@@ -10,7 +10,7 @@ SELECT
     SQLTextTime,
     SQLTextIO,
     SummaryRate
-FROM DBC.DBQLRules
-WHERE IsActive = 'Y'
+FROM DBC.DBQLRulesV
+WHERE UPPER(IsActive) = 'Y'
   AND (SQLTextTime IS NOT NULL OR SQLTextIO IS NOT NULL)
 ORDER BY UserName, AccountString;
