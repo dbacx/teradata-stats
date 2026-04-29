@@ -33,6 +33,7 @@ pg_dbql = st.Page("pages/4_Database_Query_Logging.py", title="Database Query Log
 pg_performance = st.Page("pages/5_Performance_Assessment.py", title="Performance Assessment")
 pg_schema = st.Page("pages/6_Module_7_Schema.py", title="Schema Design")
 pg_hardware = st.Page("pages/7_Module_8_Hardware.py", title="Hardware Utilization")
+pg_cleanup = st.Page("pages/8_Module_9_Cleanup.py", title="Cleanup & Cost Optimization")
 
 # Create navigation with the specified order
 navigation = st.navigation([
@@ -44,7 +45,8 @@ navigation = st.navigation([
     pg_dbql,
     pg_performance,
     pg_schema,
-    pg_hardware
+    pg_hardware,
+    pg_cleanup
 ])
 
 # Add sidebar header
