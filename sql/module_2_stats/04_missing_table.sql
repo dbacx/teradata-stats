@@ -1,6 +1,13 @@
--- Component 4: Missing at Table Level
--- Identifies actively used tables without any statistics
--- Concept: Tables used yesterday but without any stats collection
+-- =============================================================================
+-- Component   : Missing at Table Level
+-- =============================================================================
+-- Description : Identifies actively used tables without any statistics
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     o.ObjectDatabaseName AS DatabaseName, 

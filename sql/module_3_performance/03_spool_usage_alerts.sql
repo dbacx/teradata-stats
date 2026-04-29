@@ -1,6 +1,13 @@
--- Component 3: Spool Usage Alerts
--- Identifies large tables that may cause spool issues
--- Uses DBC.TableSizeV as fallback for PDCRINFO views
+-- =============================================================================
+-- Component   : Spool Usage Alerts
+-- =============================================================================
+-- Description : Identifies large tables that may cause spool issues
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

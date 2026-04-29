@@ -1,6 +1,13 @@
--- Component 6: Stale Statistics
--- Identifies statistics with old collection timestamps
--- Concept: Stats older than threshold don't reflect current data reality
+-- =============================================================================
+-- Component   : Stale Statistics
+-- =============================================================================
+-- Description : Identifies statistics with old collection timestamps
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     DatabaseName, 

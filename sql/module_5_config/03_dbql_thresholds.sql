@@ -1,6 +1,13 @@
--- Component 3: DBQL Thresholds
--- Checks if thresholds are configured for DBQL rules
--- Queries DBC.DBQLRules for SQLTextTime and SQLTextIO thresholds
+-- =============================================================================
+-- Component   : DBQL Thresholds
+-- =============================================================================
+-- Description : Checks if thresholds are configured for DBQL rules
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

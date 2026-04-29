@@ -1,6 +1,13 @@
--- Component 4: Top Tables by Size
--- Ranking of the 50 heaviest tables in the system
--- Aggregates CurrentPerm from DBC.TableSizeV
+-- =============================================================================
+-- Component   : Top Tables by Size
+-- =============================================================================
+-- Description : Ranking of the 50 heaviest tables in the system
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT TOP 50

@@ -1,6 +1,13 @@
--- Module 7 Schema: NoPI Tables
--- Identifies tables without Primary Index
--- Cross-reference DBC.TablesV with DBC.IndicesV
+-- =============================================================================
+-- Component   : NoPI Tables
+-- =============================================================================
+-- Description : Identifies tables without Primary Index
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

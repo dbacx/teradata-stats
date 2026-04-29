@@ -1,6 +1,13 @@
--- Component 1: Database Space Utilization
--- Queries DBC.DiskSpaceV to calculate space usage per database
--- Excludes system databases
+-- =============================================================================
+-- Component   : Database Space Utilization
+-- =============================================================================
+-- Description : Queries DBC.DiskSpaceV to calculate space usage per database
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

@@ -38,7 +38,7 @@ def main_app():
     initialize_session_state()
     
     # Corporate Banner
-    st.image("https://placehold.co/1000x200/F0F2F6/000000?text=Managed+Services&font=Montserrat", use_container_width=True)
+    st.image("https://placehold.co/1000x80/F0F2F6/000000?text=Managed+Services&font=Montserrat", use_container_width=True)
     
     # Corporate Welcome Section
     st.title("Teradata DBA Services Framework")

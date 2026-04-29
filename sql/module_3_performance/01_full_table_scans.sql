@@ -1,6 +1,13 @@
--- Component 1: Full Table Scans
--- Identifies tables with high I/O usage (potential FTS) in the last 30 days
--- Queries DBC.TablesV with size metrics as fallback for PDCRINFO
+-- =============================================================================
+-- Component   : Full Table Scans
+-- =============================================================================
+-- Description : Identifies tables with high I/O usage (potential FTS) in the last 30 days
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

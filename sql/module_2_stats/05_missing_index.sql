@@ -1,6 +1,13 @@
--- Component 5: Missing at Index Level
--- Identifies indexes (PI, SI, JI, PPI) without statistics
--- Concept: Missing stats on indexes prevents optimal index usage
+-- =============================================================================
+-- Component   : Missing at Index Level
+-- =============================================================================
+-- Description : Identifies indexes (PI, SI, JI, PPI) without statistics
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     i.DatabaseName, 

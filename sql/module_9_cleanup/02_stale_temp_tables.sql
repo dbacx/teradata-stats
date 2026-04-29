@@ -1,7 +1,13 @@
--- Module 9 Cleanup: Stale Temp Tables
--- Identifies tables created more than 30 days ago that appear to be temporary or staging
--- Uses pattern matching on table names to identify temp/staging tables
--- Excludes system databases
+-- =============================================================================
+-- Component   : Stale Temp Tables
+-- =============================================================================
+-- Description : Identifies tables created more than 30 days ago that appear to be temporary or staging
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

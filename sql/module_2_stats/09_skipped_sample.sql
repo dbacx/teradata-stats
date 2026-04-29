@@ -1,6 +1,13 @@
--- Component 9: Skipped and Sample Statistics
--- Identifies stats being skipped or using sample
--- Concept: Monitor skipped stats and sample usage for accuracy concerns
+-- =============================================================================
+-- Component   : Skipped and Sample Statistics
+-- =============================================================================
+-- Description : Identifies stats being skipped or using sample
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     DatabaseName, 

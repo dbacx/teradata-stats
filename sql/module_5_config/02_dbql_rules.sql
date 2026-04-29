@@ -1,6 +1,13 @@
--- Component 2: DBQL Rules
--- Lists all active DBQL logging rules
--- Queries DBC.DBQLRules for UserName, AccountString, Type, and logging options
+-- =============================================================================
+-- Component   : DBQL Rules
+-- =============================================================================
+-- Description : Lists all active DBQL logging rules
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

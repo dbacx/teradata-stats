@@ -1,6 +1,13 @@
--- Module 8 Hardware: Node CPU Usage
--- Queries CPU usage by node for the current day
--- Uses DBC.ResUsageSpma for CPU metrics (may be disabled in some environments)
+-- =============================================================================
+-- Component   : Node CPU Usage
+-- =============================================================================
+-- Description : Queries CPU usage by node for the current day
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

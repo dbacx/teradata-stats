@@ -1,6 +1,13 @@
--- Component 4: Unused/Review Indexes
--- Lists Secondary Indexes on large tables (>10GB) for review
--- Crosses DBC.IndicesV with DBC.TableSizeV
+-- =============================================================================
+-- Component   : Unused/Review Indexes
+-- =============================================================================
+-- Description : Lists Secondary Indexes on large tables (>10GB) for review
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

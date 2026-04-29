@@ -1,6 +1,13 @@
--- Component 1: Password Expiry
--- Identifies users with expired or expiring passwords
--- Queries DBC.UsersV for password last modification date
+-- =============================================================================
+-- Component   : Password Expiry
+-- =============================================================================
+-- Description : Identifies users with expired or expiring passwords
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

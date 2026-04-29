@@ -1,6 +1,13 @@
--- Component 2: Highly Skewed Queries
--- Identifies tables with high skew potential based on size
--- Uses DBC.TableSizeV as fallback for PDCRINFO views
+-- =============================================================================
+-- Component   : Highly Skewed Queries
+-- =============================================================================
+-- Description : Identifies tables with high skew potential based on size
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

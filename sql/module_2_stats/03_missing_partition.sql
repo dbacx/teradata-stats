@@ -1,6 +1,13 @@
--- Component 3: Missing at PARTITION level
--- Identifies PPI tables without PARTITION column statistics
--- Concept: Partition Elimination requires PARTITION stats
+-- =============================================================================
+-- Component   : Missing at PARTITION level
+-- =============================================================================
+-- Description : Identifies PPI tables without PARTITION column statistics
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     ic.DatabaseName, 

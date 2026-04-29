@@ -1,6 +1,13 @@
--- Module 7 Schema: Large CHAR Columns
--- Identifies columns using fixed CHAR instead of VARCHAR for large sizes
--- Uses DBC.ColumnsV filtering for Char Fixed type with length > 100
+-- =============================================================================
+-- Component   : Large CHAR Columns
+-- =============================================================================
+-- Description : Identifies columns using fixed CHAR instead of VARCHAR for large sizes
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

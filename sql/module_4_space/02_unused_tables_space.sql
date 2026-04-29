@@ -1,6 +1,13 @@
--- Component 2: Unused Tables Space
--- Identifies tables with no recent access and their space consumption
--- Crosses DBC.TableSizeV with DBC.TablesV and DBC.ObjectUsage
+-- =============================================================================
+-- Component   : Unused Tables Space
+-- =============================================================================
+-- Description : Identifies tables with no recent access and their space consumption
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

@@ -19,8 +19,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Add logo to sidebar
-st.sidebar.image("logo.jpg", use_container_width=True)
+# Add logo to sidebar using native st.logo
+st.logo("logo.jpg")
+
+# Inject CSS for offline/firewall-proof icon fallback
+offline_icons_css = """
+<style>
+    /* 1. Ocultar el texto crudo de los iconos rotos */
+    .material-symbols-rounded, 
+    .material-symbols-outlined,
+    [data-testid="stSidebarCollapseButton"] span,
+    [data-testid="stExpanderToggleIcon"] {
+        color: transparent !important;
+        font-size: 0px !important;
+    }
+
+    /* 2. Reemplazo para el botón del menú lateral (keyboard_double_arrow...) */
+    [data-testid="stSidebarCollapseButton"] span::after {
+        content: "☰" !important;
+        font-size: 1.2rem !important;
+        color: #333333 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+
+    /* 3. Reemplazo para la flecha de los acordeones/expanders (expand_more) */
+    [data-testid="stExpanderToggleIcon"]::after {
+        content: "▼" !important;
+        font-size: 0.8rem !important;
+        color: #333333 !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+</style>
+"""
+st.markdown(offline_icons_css, unsafe_allow_html=True)
 
 # Define pages in the desired order
 # Home first, then Health & Connectivity, then other modules
@@ -35,22 +68,23 @@ pg_schema = st.Page("pages/6_Module_7_Schema.py", title="Schema Design")
 pg_hardware = st.Page("pages/7_Module_8_Hardware.py", title="Hardware Utilization")
 pg_cleanup = st.Page("pages/8_Module_9_Cleanup.py", title="Cleanup & Cost Optimization")
 
-# Create navigation with the specified order
-navigation = st.navigation([
-    pg_home,
-    pg_health,
-    pg_statistics,
-    pg_space,
-    pg_security,
-    pg_dbql,
-    pg_performance,
-    pg_schema,
-    pg_hardware,
-    pg_cleanup
-])
+# Create navigation with grouped sections
+pages = {
+    "": [pg_home],
+    "Módulos": [
+        pg_health,
+        pg_statistics,
+        pg_space,
+        pg_security,
+        pg_dbql,
+        pg_performance,
+        pg_schema,
+        pg_hardware,
+        pg_cleanup
+    ]
+}
 
-# Add sidebar header
-st.sidebar.header("Módulos")
+navigation = st.navigation(pages)
 
 # Run navigation
 navigation.run()

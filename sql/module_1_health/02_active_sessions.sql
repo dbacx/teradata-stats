@@ -1,6 +1,13 @@
--- Module 1 Health: Active Sessions
--- Count of sessions by user
--- Uses DBC.SessionInfo to identify users with high concurrent sessions
+-- =============================================================================
+-- Component   : Active Sessions
+-- =============================================================================
+-- Description : Count of sessions by user from DBC.SessionInfo
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

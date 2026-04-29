@@ -1,6 +1,13 @@
--- Component 3: Direct Grants
--- Identifies users with direct grants instead of role-based access
--- Queries DBC.AllRightsV for users with direct access rights
+-- =============================================================================
+-- Component   : Direct Grants
+-- =============================================================================
+-- Description : Identifies users with direct grants instead of role-based access
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

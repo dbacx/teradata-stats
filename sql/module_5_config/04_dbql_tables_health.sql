@@ -1,6 +1,13 @@
--- Component 4: DBQL Tables Health
--- Checks the health and size of DBQL logging tables
--- Queries DBC.TablesV and DBC.TableSizeV for DBQLog tables
+-- =============================================================================
+-- Component   : DBQL Tables Health
+-- =============================================================================
+-- Description : Checks the health and size of DBQL logging tables
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

@@ -1,6 +1,13 @@
--- Component 8: Multicolumn MaxValueLength
--- Identifies multicolumn stats where combined length exceeds storage limits
--- Concept: Multicolumn stats can be truncated if MaxValueLength is too small
+-- =============================================================================
+-- Component   : Multicolumn MaxValueLength
+-- =============================================================================
+-- Description : Identifies multicolumn stats where combined length exceeds storage limits
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     DatabaseName, 

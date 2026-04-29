@@ -1,6 +1,13 @@
--- Module 8 Hardware: AMP Space Skew
--- Calculates total space per AMP to detect disk-level skew
--- Uses DBC.TableSizeV to analyze space distribution across AMPs
+-- =============================================================================
+-- Component   : AMP Space Skew
+-- =============================================================================
+-- Description : Calculates total space per AMP to detect disk-level skew
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

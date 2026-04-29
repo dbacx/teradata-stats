@@ -1,6 +1,13 @@
--- Component 4: Stagnant Users
--- Identifies users with no recent access
--- Queries DBC.UsersV for users with stale LastAccessTimeStamp
+-- =============================================================================
+-- Component   : Stagnant Users
+-- =============================================================================
+-- Description : Identifies users with no recent access
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

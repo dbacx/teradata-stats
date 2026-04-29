@@ -1,6 +1,13 @@
--- Component 3: MVC (Multi-Value Compression) Candidates
--- Identifies compressible columns without compression in large tables
--- Looks for CHAR, VARCHAR, BYTEINT, INTEGER, DATE types with null CompressValueList
+-- =============================================================================
+-- Component   : MVC (Multi-Value Compression) Candidates
+-- =============================================================================
+-- Description : Identifies compressible columns without compression in large tables
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

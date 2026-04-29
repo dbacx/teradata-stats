@@ -1,6 +1,13 @@
--- Component 2: Sample Candidates
--- Identifies columns that should use USING SAMPLE instead of FULL SCAN
--- Concept: High cardinality columns in large tables currently collected at 100%
+-- =============================================================================
+-- Component   : Sample Candidates
+-- =============================================================================
+-- Description : Identifies columns that should use USING SAMPLE instead of FULL SCAN
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT 
     S.DatabaseName, 

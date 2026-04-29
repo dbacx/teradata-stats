@@ -1,6 +1,13 @@
--- Component 5: Users Without Role
--- Identifies productive users that are not members of any role
--- Queries DBC.UsersV left joined with DBC.RoleMembersV
+-- =============================================================================
+-- Component   : Users Without Role
+-- =============================================================================
+-- Description : Identifies productive users that are not members of any role
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

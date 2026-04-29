@@ -1,6 +1,13 @@
--- Component 5: Skewed Tables
--- Identifies tables with data skew across AMPs
--- Calculates skew percentage: (100 - (AVG(CurrentPerm)/MAX(CurrentPerm))*100)
+-- =============================================================================
+-- Component   : Skewed Tables
+-- =============================================================================
+-- Description : Identifies tables with data skew across AMPs
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 

@@ -1,6 +1,13 @@
--- Component 10: DBC Recommendations
--- Identifies missing stats in system databases (DBC, PDCRDATA)
--- Concept: System tables also need stats for optimal performance
+-- =============================================================================
+-- Component   : DBC Recommendations
+-- =============================================================================
+-- Description : Identifies missing stats in system databases (DBC, PDCRDATA)
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT DISTINCT 
     t.DatabaseName, 

@@ -1,6 +1,13 @@
--- Component 7: Zero Statistics
--- Identifies stats with RowCount=0 on tables that actually contain data
--- Concept: Zero count stats can cause Product Join plans on populated tables
+-- =============================================================================
+-- Component   : Zero Statistics
+-- =============================================================================
+-- Description : Identifies stats with RowCount=0 on tables that actually contain data
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 SELECT 
     s.DatabaseName, 

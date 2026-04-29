@@ -1,7 +1,13 @@
--- Module 9 Cleanup: Empty Tables
--- Identifies tables that are not consuming space (zero rows/blocks)
--- Cross-references DBC.TablesV with DBC.TableSizeV to detect empty tables
--- Excludes system databases
+-- =============================================================================
+-- Component   : Empty Tables
+-- =============================================================================
+-- Description : Identifies tables that are not consuming space (zero rows/blocks)
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-04-29
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
 
 LOCKING ROW FOR ACCESS
 SELECT 
