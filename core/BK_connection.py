@@ -23,11 +23,26 @@ load_dotenv()
 class TeradataConnection:
     """
     Manages Teradata database connections with security and tracing capabilities.
+    
+    Attributes:
+        host: Teradata server hostname
+        user: Database username
+        password: Database password
+        database: Default database name
+        query_band: Query band for application tracing
     """
     
     def __init__(self, host: Optional[str] = None, user: Optional[str] = None, 
                  password: Optional[str] = None, database: Optional[str] = None):
+        """
+        Initialize Teradata connection parameters.
         
+        Args:
+            host: Teradata server hostname (from env if None)
+            user: Database username (from env if None)
+            password: Database password (from env if None)
+            database: Default database name (from env if None)
+        """
         self.host = host or os.getenv('TERADATA_HOST')
         self.user = user or os.getenv('TERADATA_USER')
         self.password = password or os.getenv('TERADATA_PASSWORD')
@@ -35,30 +50,34 @@ class TeradataConnection:
         self.query_band = 'App=TDStatsOpt;'
         
         if not all([self.host, self.user, self.password]):
-            raise ValueError("Missing required connection parameters. Check your .env file.")
+            raise ValueError("Missing required connection parameters. Check environment variables.")
+    
+    #def get_connection_string(self) -> str:
+    #    """
+    #    Generate Teradata connection string.
+    #    
+    #    Returns:
+    #        Formatted connection string for teradatasql
+    #    """
+    #    return f"dbcName={self.host};user={self.user};password={self.password};database={self.database}"
     
     def connect(self) -> teradatasql.connect:
         """
         Establish database connection with Query Band injection.
+        
+        Returns:
+            Active Teradata connection object
+            
+        Raises:
+            ConnectionError: If connection fails
         """
         try:
-            # Construcción dinámica y segura de parámetros
-            conn_params = {
-                "host": self.host,
-                "user": self.user,
-                "password": self.password
-            }
-            
-            # Solo pasamos la base de datos si fue configurada
-            if self.database:
-                conn_params["database"] = self.database
-                
-            conn = teradatasql.connect(**conn_params)
+            conn = teradatasql.connect(self.get_connection_string())
             
             # Inject Query Band for application tracing
             self._inject_query_band(conn)
             
-            logger.info(f"Successfully connected to Teradata: {self.host}")
+            logger.info(f"Successfully connected to Teradata: {self.host}/{self.database}")
             return conn
             
         except Exception as e:
@@ -68,6 +87,9 @@ class TeradataConnection:
     def _inject_query_band(self, conn: teradatasql.connect) -> None:
         """
         Inject Query Band for application tracing and monitoring.
+        
+        Args:
+            conn: Active database connection
         """
         try:
             cursor = conn.cursor()
@@ -82,6 +104,16 @@ class TeradataConnection:
     def execute_query(self, query: str, params: Optional[Dict[str, Any]] = None) -> list:
         """
         Execute SQL query with automatic connection management.
+        
+        Args:
+            query: SQL query string
+            params: Optional query parameters
+            
+        Returns:
+            Query results as list of tuples
+            
+        Raises:
+            Exception: If query execution fails
         """
         conn = None
         try:
@@ -109,6 +141,9 @@ class TeradataConnection:
     def test_connection(self) -> bool:
         """
         Test database connectivity.
+        
+        Returns:
+            True if connection successful, False otherwise
         """
         try:
             conn = self.connect()
@@ -131,5 +166,22 @@ class TeradataConnection:
 
 
 def create_connection() -> TeradataConnection:
-    """Factory function"""
+    """
+    Factory function to create Teradata connection from environment variables.
+    
+    Returns:
+        Configured TeradataConnection instance
+    """
     return TeradataConnection()
+
+
+if __name__ == "__main__":
+    # Example usage and connection test
+    try:
+        td_conn = create_connection()
+        if td_conn.test_connection():
+            print("Teradata connection successful!")
+        else:
+            print("Teradata connection failed!")
+    except Exception as e:
+        print(f"Error: {str(e)}")

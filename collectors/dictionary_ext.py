@@ -10,41 +10,43 @@ import logging
 import pandas as pd
 from typing import Optional
 from core.connection import create_connection
+from core.schemas import validate_columns
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
-def extract_database_stats(database_name: str) -> pd.DataFrame:
+def extract_database_stats(database_name: Optional[str] = None, table_name: Optional[str] = None) -> pd.DataFrame:
     """
     Extract comprehensive database statistics metadata from Teradata system tables.
     
-    This function performs an optimized join between DBC.StatsV, DBC.TablesV,
-    and a pre-aggregated DBC.TableSizeV to avoid Cartesian products and ensure
-    accurate space calculations.
-    
     Args:
-        database_name: Name of the database to extract statistics from
+        database_name: Name of the database to extract statistics from. If None or "ALL", extracts from all databases (excluding system databases).
+        table_name: Name of the specific table to extract. If provided, filters by table name.
         
     Returns:
-        DataFrame containing statistics metadata with columns:
-        - DatabaseName
-        - TableName
-        - ColumnName
-        - IndexName
-        - StatisticsType
-        - CreateTime
-        - LastCollectTimeStamp
-        - Version
-        - TableSizeGB
-        - TableKind
+        DataFrame containing statistics metadata with official Teradata DBC columns.
         
     Raises:
-        ValueError: If database_name is empty or None
+        ValueError: If database_name is empty string (but None or "ALL" are valid)
         Exception: If SQL execution fails
     """
-    if not database_name or not database_name.strip():
-        raise ValueError("Database name cannot be empty or None")
+    # System databases to exclude
+    system_databases = [
+        'ALL', 'CONSOLE', 'CRASHDUMPS', 'DBA', 'DBC', 'DBCEXTENSION', 'DBCMANAGER',
+        'DBCMNGR', 'dbcmngr12', 'dbqm', 'dbqrymgr', 'DEFAULT', 'EXTUser', 'HIGA',
+        'LockLogShredder', 'NETVAULT1', '$NETVAULT_CATALOG', 'PDCRACCESS',
+        'PDCRADM', 'PDCRADMIN', 'PDCRCANARY0M', 'PDCRCANARY1M', 'PDCRCANARY2M',
+        'PDCRCANARY3M', 'PDCRCANARY4M', 'PDCRHIGA', 'PDCRINFO', 'PDCRSTG',
+        'PDCRTPCD', 'PMCPAccess', 'PMCPADM', 'PMCPADMIN', 'pmcpawt',
+        'PMCPCANARYAPPL', 'PMCPCANARYLOAD', 'PMCPCANARYUSER', 'PMCPHIGA',
+        'PMCPINFO', 'PMCPTPCD', 'PUBLIC', 'qcd', 'spoolreserve', 'spool_reserve',
+        'SQLJ', 'stats', 'SYSADMIN', 'SYSBAR', 'SYS_CALENDAR', 'SYSJDBC', 'SYSLIB',
+        'SYS_MGMT', 'SYSSPATIAL', 'SYSTEMFE', 'SYSUDTLIB', 'SYSUIF', 'SYSUSR',
+        'SYSXML', 'TDMaps', 'TDPUSER', 'TDQCD', 'TD_SERVER_DB', 'TDStats',
+        'TD_SYSFNLIB', 'TD_SYSXML', 'TDWM', 'TMADMIN', 'tswiz', 'tswizdbase',
+        'twm', 'twm_results', 'twm_source', 'VIEWPOINT', 'XASF_FAST_PATH'
+    ]
     
     conn = None
     try:
@@ -52,7 +54,31 @@ def extract_database_stats(database_name: str) -> pd.DataFrame:
         td_conn = create_connection()
         conn = td_conn.connect()
         
+        # Build dynamic WHERE clause based on parameters
+        where_conditions = []
+        tablesize_where_conditions = []
+        
+        # Database filter
+        if database_name and database_name.strip() and database_name.upper() != "ALL":
+            where_conditions.append(f"s.DatabaseName = '{database_name}'")
+            tablesize_where_conditions.append(f"DatabaseName = '{database_name}'")
+        else:
+            # Exclude system databases when doing system-wide extraction
+            system_db_filter = ", ".join([f"'{db}'" for db in system_databases])
+            where_conditions.append(f"s.DatabaseName NOT IN ({system_db_filter})")
+            where_conditions.append("s.DatabaseName NOT LIKE ALL('%PDCR%', '%PMCP%', '%QCD%', '%tdwm%', '%tswiz%', '%twm%', 'ADLS%')")
+            tablesize_where_conditions.append(f"DatabaseName NOT IN ({system_db_filter})")
+        
+        # Table filter
+        if table_name and table_name.strip():
+            where_conditions.append(f"s.TableName = '{table_name}'")
+            tablesize_where_conditions.append(f"TableName = '{table_name}'")
+        
+        where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
+        tablesize_where_clause = " AND ".join(tablesize_where_conditions) if tablesize_where_conditions else "1=1"
+        
         # Optimized SQL query with pre-aggregated TableSizeV to avoid Cartesian products
+        # Using exact column names from DBC.StatsV, DBC.TablesV, and DBC.TableSizeV as defined in schemas.py
         sql_query = f"""
         WITH TableSize_Aggregated AS (
             SELECT 
@@ -60,21 +86,28 @@ def extract_database_stats(database_name: str) -> pd.DataFrame:
                 TableName,
                 SUM(CurrentPerm) AS TotalCurrentPerm
             FROM DBC.TableSizeV
-            WHERE DatabaseName = '{database_name}'
+            WHERE {tablesize_where_clause}
             GROUP BY DatabaseName, TableName
         )
         SELECT 
             s.DatabaseName,
             s.TableName,
             s.ColumnName,
-            s.IndexName,
-            s.StatisticsType,
-            s.CreateTime,
+            s.StatsName,
+            s.StatsType,
+            s.StatsSource,
+            s.ValidStats,
+            s.RowCount,
+            s.UniqueValueCount,
+            s.NullCount,
+            s.CreateTimeStamp,
             s.LastCollectTimeStamp,
-            s.Version,
+            s.LastAlterTimeStamp,
             -- Convert bytes to GB within SQL for efficiency
             CAST(COALESCE(ts.TotalCurrentPerm, 0) AS BIGINT) / 1024.0 / 1024.0 / 1024.0 AS TableSizeGB,
-            t.TableKind
+            t.TableKind,
+            t.AccessCount,
+            t.LastAccessTimeStamp
         FROM DBC.StatsV s
         INNER JOIN DBC.TablesV t ON 
             s.DatabaseName = t.DatabaseName AND 
@@ -82,15 +115,27 @@ def extract_database_stats(database_name: str) -> pd.DataFrame:
         LEFT JOIN TableSize_Aggregated ts ON 
             s.DatabaseName = ts.DatabaseName AND 
             s.TableName = ts.TableName
-        WHERE s.DatabaseName = '{database_name}'
+        WHERE {where_clause}
             AND t.TableKind = 'T'  -- Filter only tables (not views, macros, etc.)
         ORDER BY s.DatabaseName, s.TableName, s.ColumnName
         """
         
-        # Execute query using pandas for efficient DataFrame creation
-        logger.info(f"Extracting statistics metadata for database: {database_name}")
+        scope = f"database: {database_name}" if database_name and database_name.upper() != "ALL" else "entire system (excluding system databases)"
+        if table_name:
+            scope += f", table: {table_name}"
+        logger.info(f"Extracting statistics metadata for {scope}")
         
+        # Execute query using pandas for efficient DataFrame creation
         df = pd.read_sql(sql_query, conn)
+        # Validate DataFrame columns against expected schema
+        expected_columns = [
+            'DatabaseName', 'TableName', 'ColumnName', 'StatsName', 'StatsType',
+            'StatsSource', 'ValidStats', 'RowCount', 'UniqueValueCount', 'NullCount',
+            'CreateTimeStamp', 'LastCollectTimeStamp', 'LastAlterTimeStamp',
+            'TableSizeGB', 'TableKind', 'AccessCount', 'LastAccessTimeStamp'
+        ]
+        
+        validate_columns(df, expected_columns, 'DBC.StatsV')
         
         # Log successful extraction
         row_count = len(df)
@@ -101,7 +146,7 @@ def extract_database_stats(database_name: str) -> pd.DataFrame:
             logger.warning(f"No statistics records found for database '{database_name}'")
         
         # Convert timestamp columns to datetime if they exist
-        timestamp_columns = ['CreateTime', 'LastCollectTimeStamp']
+        timestamp_columns = ['CreateTimeStamp', 'LastCollectTimeStamp', 'LastAlterTimeStamp', 'LastAccessTimeStamp']
         for col in timestamp_columns:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors='coerce')
@@ -114,7 +159,6 @@ def extract_database_stats(database_name: str) -> pd.DataFrame:
         raise Exception(error_msg)
         
     finally:
-        # Ensure connection is always closed
         if conn:
             try:
                 conn.close()
@@ -124,20 +168,11 @@ def extract_database_stats(database_name: str) -> pd.DataFrame:
 
 
 def extract_database_stats_batch(database_names: list) -> pd.DataFrame:
-    """
-    Extract statistics metadata for multiple databases in batch.
-    
-    Args:
-        database_names: List of database names to extract statistics from
-        
-    Returns:
-        Combined DataFrame with statistics from all specified databases
-    """
+    """Extract statistics metadata for multiple databases in batch."""
     if not database_names:
         raise ValueError("Database names list cannot be empty")
     
     all_dfs = []
-    
     for db_name in database_names:
         try:
             df = extract_database_stats(db_name)
@@ -149,60 +184,26 @@ def extract_database_stats_batch(database_names: list) -> pd.DataFrame:
     
     if all_dfs:
         combined_df = pd.concat(all_dfs, ignore_index=True)
-        logger.info(f"Combined statistics extracted: {len(combined_df)} total records from {len(all_dfs)} databases")
+        logger.info(f"Combined statistics extracted: {len(combined_df)} records")
         return combined_df
     else:
-        logger.warning("No statistics extracted from any database")
         return pd.DataFrame()
 
 
 def validate_database_access(database_name: str) -> bool:
-    """
-    Validate if the specified database exists and is accessible.
-    
-    Args:
-        database_name: Database name to validate
-        
-    Returns:
-        True if database exists and is accessible, False otherwise
-    """
+    """Validate if the specified database exists and is accessible."""
     try:
         td_conn = create_connection()
         conn = td_conn.connect()
         
-        query = f"SELECT 1 FROM DBC.Databases WHERE DatabaseName = '{database_name}'"
+        query = "SELECT 1 FROM DBC.Databases WHERE DatabaseName = ?"
         cursor = conn.cursor()
-        cursor.execute(query)
+        cursor.execute(query, [database_name])
         result = cursor.fetchone()
         cursor.close()
         conn.close()
         
         return result is not None
-        
     except Exception as e:
         logger.error(f"Database access validation failed for '{database_name}': {str(e)}")
         return False
-
-
-if __name__ == "__main__":
-    # Example usage
-    try:
-        # Test with a sample database name
-        test_db = "DBC"  # DBC database should always exist
-        logger.info(f"Testing extraction for database: {test_db}")
-        
-        if validate_database_access(test_db):
-            stats_df = extract_database_stats(test_db)
-            
-            if not stats_df.empty:
-                print(f"Extracted {len(stats_df)} statistics records")
-                print("\nSample data:")
-                print(stats_df.head())
-                print(f"\nColumns: {list(stats_df.columns)}")
-            else:
-                print("No statistics found")
-        else:
-            print(f"Database '{test_db}' not accessible")
-            
-    except Exception as e:
-        print(f"Error: {str(e)}")
