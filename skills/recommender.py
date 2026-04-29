@@ -37,7 +37,7 @@ class DDLRecommender:
         
         Args:
             df_stale: DataFrame containing stale statistics with columns:
-                     DatabaseName, TableName, ColumnName, StatisticsType, etc.
+                     DatabaseName, TableName, ColumnName, StatsType, etc.
             
         Returns:
             List of COLLECT STATISTICS DDL statements
@@ -62,8 +62,11 @@ class DDLRecommender:
             grouped = df_stale.groupby(['DatabaseName', 'TableName'])
             
             for (database_name, table_name), group in grouped:
-                # Check if this is table-level statistics (ColumnName = '*')
-                table_level_stats = group[group['ColumnName'] == '*']
+                # Check if this is table-level statistics (ColumnName = '*' or null)
+                table_level_stats = group[
+                    (group['ColumnName'] == '*') | 
+                    (group['ColumnName'].isna())
+                ]
                 
                 if not table_level_stats.empty:
                     # Generate table-level COLLECT STATISTICS
@@ -72,23 +75,23 @@ class DDLRecommender:
                     logger.debug(f"Generated table-level collect stats: {database_name}.{table_name}")
                 else:
                     # Generate column-level COLLECT STATISTICS
-                    # Group columns by StatisticsType to optimize multiple columns of same type
-                    column_groups = group.groupby('StatisticsType')
+                    # Filter out null column names and get unique values
+                    valid_columns = group[group['ColumnName'].notna()]['ColumnName'].unique().tolist()
                     
-                    for stats_type, column_group in column_groups:
-                        column_names = column_group['ColumnName'].unique().tolist()
+                    if valid_columns:
+                        # Format column list - handle single vs multiple columns
+                        if len(valid_columns) == 1:
+                            column_list = f"({valid_columns[0]})"
+                        else:
+                            # Join multiple columns with comma
+                            column_list = f"({', '.join(valid_columns)})"
                         
-                        if column_names:
-                            # Format column list - handle single vs multiple columns
-                            if len(column_names) == 1:
-                                column_list = f"({column_names[0]})"
-                            else:
-                                # Join multiple columns with comma
-                                column_list = f"({', '.join(column_names)})"
-                            
-                            ddl = f"COLLECT STATISTICS ON {database_name}.{table_name} COLUMN {column_list};"
-                            ddl_statements.append(ddl)
-                            logger.debug(f"Generated column-level collect stats: {database_name}.{table_name} - {column_list}")
+                        ddl = f"COLLECT STATISTICS ON {database_name}.{table_name} COLUMN {column_list};"
+                        ddl_statements.append(ddl)
+                        logger.debug(f"Generated column-level collect stats: {database_name}.{table_name} - {column_list}")
+            
+            # Filter out any None values from the final list
+            ddl_statements = [stmt for stmt in ddl_statements if stmt is not None]
             
             logger.info(f"Generated {len(ddl_statements)} COLLECT STATISTICS statements")
             return ddl_statements
@@ -140,6 +143,9 @@ class DDLRecommender:
                 ddl_statements.append(ddl)
                 
                 logger.debug(f"Generated drop stats: {database_name}.{table_name} (excess: {excess_count})")
+            
+            # Filter out any None values from the final list
+            ddl_statements = [stmt for stmt in ddl_statements if stmt is not None]
             
             logger.info(f"Generated {len(ddl_statements)} DROP STATISTICS statements")
             return ddl_statements
@@ -303,7 +309,7 @@ if __name__ == "__main__":
             'DatabaseName': ['DB1', 'DB1', 'DB2'],
             'TableName': ['Table1', 'Table2', 'Table1'],
             'ColumnName': ['Col1', '*', 'Col2'],
-            'StatisticsType': ['COLUMN', 'TABLE', 'COLUMN']
+            'StatsType': ['I', 'T', 'I']
         }
         
         bloat_data = {

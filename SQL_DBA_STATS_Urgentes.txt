@@ -1,0 +1,107 @@
+-- 1. Crear la tabla volátil con el uso y CPU
+
+CREATE MULTISET VOLATILE TABLE temp_logtbl AS ( 
+    SELECT
+        b.ObjectDatabaseName AS DbName,
+        b.ObjectTableName AS TbName,
+        SUM(COUNT(a.queryid)) OVER (PARTITION BY b.ObjectDatabaseName, b.ObjectTableName) AS Counts,
+        SUM(a.AMPCPUTime + a.ParserCPUTime) AS TotalCPU 
+    FROM pdcrinfo.dbqlogtbl_hst a  
+    INNER JOIN pdcrinfo.dbqlobjtbl_hst b   
+        ON a.procid = b.procid  
+        AND a.queryid = b.queryid  
+        AND a.logdate = b.logdate   
+        AND a.logdate BETWEEN CURRENT_DATE - 30 AND CURRENT_DATE  
+    WHERE b.objecttype = 'Tab' 
+      AND a.statementtype = 'Select' 
+      AND b.ObjectDatabaseName NOT LIKE ALL('%PDCR%', '%PMCP%', '%QCD%', '%tdwm%', '%tswiz%', '%twm%', 'ADLS%')
+    GROUP BY 1, 2, a.statementtype
+) WITH DATA  
+PRIMARY INDEX (DbName, TbName)  
+ON COMMIT PRESERVE ROWS;
+
+
+-- 2. Query principal unificado
+WITH Tamanio_Tabla AS (
+    -- Calculamos el espacio y FILTRAMOS AQUÍ MISMO por >= 10GB
+    -- 10 GB = 10,737,418,240 bytes. Esto elimina automáticamente tablas vacías.
+    SELECT 
+        DatabaseName, 
+        TableName, 
+        SUM(CurrentPerm) AS TableSize 
+    FROM DBC.TableSizeV 
+    GROUP BY 1, 2
+    HAVING SUM(CurrentPerm) >= 10737418 
+),
+Target_Tables AS (
+    -- Filtramos las tablas de sistema y nos quedamos con las que NO tienen stats
+    SELECT       
+        a.DbName AS DatabaseName,
+        a.TbName AS TableName,
+        SUM(a.Counts) AS FreqOfUse,
+        SUM(a.TotalCPU) AS TotalCPU  
+    FROM temp_logtbl a   
+    INNER JOIN DBC.TablesV T  
+        ON a.DbName = T.DatabaseName    
+        AND a.TbName = T.TableName
+    WHERE T.TableKind IN('T', 'I') 
+        AND T.DatabaseName NOT IN (
+            'ALL','CONSOLE','CRASHDUMPS','DBA','DBC','DBCEXTENSION','DBCMANAGER',
+            'DBCMNGR','dbcmngr12','dbqm','dbqrymgr','DEFAULT','EXTUser','HIGA',
+            'LockLogShredder','NETVAULT1','$NETVAULT_CATALOG','PDCRACCESS',
+            'PDCRADM','PDCRADMIN','PDCRCANARY0M','PDCRCANARY1M','PDCRCANARY2M',
+            'PDCRCANARY3M','PDCRCANARY4M','PDCRHIGA','PDCRINFO','PDCRSTG',
+            'PDCRTPCD','PMCPAccess','PMCPADM','PMCPADMIN','pmcpawt',
+            'PMCPCANARYAPPL','PMCPCANARYLOAD','PMCPCANARYUSER','PMCPHIGA',
+            'PMCPINFO','PMCPTPCD','PUBLIC','qcd','spoolreserve','spool_reserve',
+            'SQLJ','stats','SYSADMIN','SYSBAR','SYS_CALENDAR','SYSJDBC','SYSLIB',
+            'SYS_MGMT','SYSSPATIAL','SYSTEMFE','SYSUDTLIB','SYSUIF','SYSUSR',
+            'SYSXML','TDMaps','TDPUSER','TDQCD','TD_SERVER_DB','TDStats',
+            'TD_SYSFNLIB','TD_SYSXML','TDWM','TMADMIN','tswiz','tswizdbase',
+            'twm','twm_results','twm_source','VIEWPOINT','XASF_FAST_PATH'
+        )  
+        AND T.DatabaseName NOT LIKE ALL('%PDCR%', '%PMCP%', '%QCD%', '%tdwm%', '%tswiz%', '%twm%', 'ADLS%')     
+        AND NOT EXISTS (
+            SELECT 1 FROM DBC.StatsV S 
+            WHERE S.DatabaseName = a.DbName AND S.TableName = a.TbName
+        )
+    GROUP BY 1, 2
+    -- FILTROS DE ACTIVIDAD: CPU mayor a 1,000 y Frecuencia mayor a 20
+    HAVING SUM(a.TotalCPU) >= 1000 
+       AND SUM(a.Counts) >= 20
+),
+Columnas_Indice AS (
+    -- Buscamos el Primary Index o Partición de esas tablas para el COLLECT
+    SELECT 
+        DatabaseName, 
+        TableName, 
+        ColumnName
+    FROM DBC.IndicesV
+    WHERE IndexType IN ('P', 'Q')
+)
+SELECT 
+    t.DatabaseName,
+    t.TableName,
+    t.FreqOfUse,
+    t.TotalCPU,
+    sz.TableSize,
+    -- Concatenación de la sentencia COLLECT
+    'COLLECT STATISTICS USING NO THRESHOLD FOR CURRENT ' || 
+    COALESCE(
+        TRIM(TRAILING ',' FROM (XMLAGG(TRIM('COLUMN (' || i.ColumnName || ')') || ',' ORDER BY i.ColumnName)(VARCHAR(10000)))),
+        'COLUMN (1)'
+    ) || 
+    ' ON ' || TRIM(t.DatabaseName) || '.' || TRIM(t.TableName) || ';' AS Comando_Collect
+FROM Target_Tables t
+-- Al usar INNER JOIN con Tamanio_Tabla, descartamos de tajo las menores a 10GB
+INNER JOIN Tamanio_Tabla sz 
+    ON t.DatabaseName = sz.DatabaseName 
+    AND t.TableName = sz.TableName
+LEFT JOIN Columnas_Indice i 
+    ON t.DatabaseName = i.DatabaseName 
+    AND t.TableName = i.TableName
+GROUP BY 1, 2, 3, 4, 5
+ORDER BY t.TotalCPU DESC;
+
+-- 3. Limpieza
+DROP TABLE temp_logtbl;

@@ -177,8 +177,9 @@ credentials/
 *.pem
 *.p12
 
-# Streamlit
+# Streamlit (keep config.toml)
 .streamlit/
+!.streamlit/config.toml
 
 # Data files
 *.csv
