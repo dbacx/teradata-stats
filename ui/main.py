@@ -67,6 +67,7 @@ pg_performance = st.Page("pages/5_Performance_Assessment.py", title="Performance
 pg_schema = st.Page("pages/6_Module_7_Schema.py", title="Schema Design")
 pg_hardware = st.Page("pages/7_Module_8_Hardware.py", title="Hardware Utilization")
 pg_cleanup = st.Page("pages/8_Module_9_Cleanup.py", title="Cleanup & Cost Optimization")
+pg_monthly_report = st.Page("pages/9_Module_10_Monthly_Report.py", title="Monthly Report")
 
 # Create navigation with grouped sections
 pages = {
@@ -80,7 +81,8 @@ pages = {
         pg_performance,
         pg_schema,
         pg_hardware,
-        pg_cleanup
+        pg_cleanup,
+        pg_monthly_report
     ]
 }
 

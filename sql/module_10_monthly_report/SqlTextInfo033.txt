@@ -1,1 +1,0 @@
-SELECT Month_of_Year , TotalCurPct , CASE WHEN TotalCurPct <= 50 THEN 'Healthy' WHEN TotalCurPct BETWEEN 50.01 AND 70 THEN 'Degraded' ELSE 'Critical' END AS SpaceHealth , 'Space' AS Space FROM space GROUP BY 1 , 2 , 3 ORDER BY Month_of_Year ;
