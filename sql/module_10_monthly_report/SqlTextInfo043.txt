@@ -1,0 +1,1 @@
+SELECT CAST( ( CAST( ADD_MONTHS( DATE - (EXTRACT ( MONTH  FROM ( DATE ))(TITLE 'Month')) + 1 , 0 )  AS FORMAT 'mmm'  ) ) AS CHAR ( 3 )  ) || '_' || CAST( (EXTRACT ( YEAR  FROM ( ADD_MONTHS( DATE - (EXTRACT ( MONTH  FROM ( DATE ))(TITLE 'Month')) + 1 , - 1 ) ))(TITLE 'Year'))  AS CHAR ( 4 )  ) ;

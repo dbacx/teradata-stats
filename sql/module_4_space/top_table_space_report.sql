@@ -1,0 +1,30 @@
+﻿-- =============================================================================
+-- Component   : Top Table Space Report
+-- =============================================================================
+-- Description : Reports top 10 tables by current perm space utilization
+--               including space metrics and skew information
+-- 
+-- Version     : 1.0.0
+-- Date        : 2026-05-05
+-- Author      : Ricardo Enciso
+-- Environment : Teradata 20
+-- =============================================================================
+
+LOCK	ROW ACCESS 
+SELECT	CURRENTPERMRnk, dt.year_of_calendar, dt.Month_of_Year, dt.Week_of_year,
+		LogDate , Tablename, DatabaseName, AccountName, CURRENTPERM ,
+		CURRENTPERM / (1024 * 1024 * 1024) AS CURRENTPERM_Gb, PEAKPERM,
+		CURRENTPERMSKEW, PEAKPERMSKEW 
+FROM(
+SELECT	Rank()  Over(
+ORDER BY CURRENTPERM DESC) AS CURRENTPERMRnk, c.year_of_calendar,
+		c.Month_of_Year, c.Week_of_year , LogDate, Tablename, DatabaseName,
+		AccountName, CURRENTPERM, CURRENTPERM / (1024 * 1024 * 1024) AS CURRENTPERM_Gb,
+		PEAKPERM, CURRENTPERMSKEW, PEAKPERMSKEW 
+FROM	PDCRINFO.TableSpace_Hst a INNER JOIN PDCRINFO.CALENDAR c 
+	ON a.Logdate = c.Calendar_date 
+WHERE	 c.Calendar_date = a.Logdate 
+	AND a.Logdate = (
+SELECT	Max(Logdate) 
+FROM	PDCRINFO.TableSpace_Hst)) dt 
+WHERE	CURRENTPERMRnk <= 10;

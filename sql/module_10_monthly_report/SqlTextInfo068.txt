@@ -1,0 +1,1 @@
+LOCK ROW FOR ACCESS SELECT DATE ( FORMAT 'yyyy-mm-dd' ) (NAMED logdate ) , infodata (NAMED db_version ) FROM dbc.dbcinfo WHERE infokey = 'VERSION' ;

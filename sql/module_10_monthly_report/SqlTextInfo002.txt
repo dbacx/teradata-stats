@@ -1,0 +1,1 @@
+SELECT * FROM dbc.dbcinfo ORDER BY 1 DESC ;

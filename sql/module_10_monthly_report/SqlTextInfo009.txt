@@ -1,0 +1,1 @@
+EXEC pdcrinfo.CapSystem_CPU_Rpt ( dAtE'2026-04-01' , dAtE'2026-04-30' )
