@@ -59,7 +59,7 @@ st.markdown(offline_icons_css, unsafe_allow_html=True)
 # Home first, then Health & Connectivity, then other modules
 pg_home = st.Page("app.py", title="Home")
 pg_health = st.Page("pages/1_System_Information.py", title="System Information")
-pg_statistics = st.Page("pages/1_Statistics_Management.py", title="Statistics Management")
+pg_statistics = st.Page("pages/2_Module_2_Statistics.py", title="Statistics Management")
 pg_space = st.Page("pages/2_Space.py", title="Space")
 pg_security = st.Page("pages/3_Security.py", title="Security")
 pg_dbql = st.Page("pages/4_Database_Query_Logging.py", title="Database Query Logging")

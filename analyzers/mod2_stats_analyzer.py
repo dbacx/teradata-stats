@@ -8,8 +8,20 @@ and DDL remediation statements for the Statistics Management module.
 import logging
 import pandas as pd
 from typing import Dict, Any, Optional
+from pathlib import Path
+import sys
 from core.base_analyzer import BaseAnalyzer, Severity
 from core.config import THRESHOLDS
+
+# ---------------------------------------------------------
+# BULLETPROOF PATH ROUTING
+# ---------------------------------------------------------
+# Sube exactamente 1 nivel desde analyzers/ hasta teradata-stats/
+current_file_path = Path(__file__).resolve()
+project_root = str(current_file_path.parent.parent)
+
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)  # insert(0) fuerza a Python a buscar aquí primero
 
 logger = logging.getLogger(__name__)
 

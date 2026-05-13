@@ -12,14 +12,24 @@ import logging
 import sys
 import os
 import time
+from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# ---------------------------------------------------------
+# BULLETPROOF PATH ROUTING
+# ---------------------------------------------------------
+# Sube exactamente 2 niveles desde ui/pages/2_Module_...py hasta teradata-stats/
+current_file_path = Path(__file__).resolve()
+project_root = str(current_file_path.parent.parent.parent)
 
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)  # insert(0) fuerza a Python a buscar aquí primero
+
+# Ahora sí, importaciones locales
 from core.connection import TeradataConnection
 from collectors.mod2_stats_collector import StatsCollector
 from analyzers.mod2_stats_analyzer import StatsAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
+from utils.csv_logger import log_execution
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -247,23 +257,20 @@ def display_ddl_actions(analyzed_data: dict):
                 if action in ddl_actions:
                     ddl_actions[action].append(statement)
     
-    # Display each action type
-    for action, statements in ddl_actions.items():
-        if statements:
-            st.write(f"**{action} ({len(statements)} statements):**")
-            for stmt in statements:
-                st.code(stmt, language='sql')
-            st.markdown("---")
-    
-    # Download all DDL
+    # Consolidate all DDL into single block
     all_ddl = []
     for action, statements in ddl_actions.items():
         all_ddl.extend(statements)
     
     if all_ddl:
         combined_ddl = "\n".join(all_ddl)
+        
+        # Display single DDL block
+        st.code(combined_ddl, language='sql')
+        
+        # Download button
         st.download_button(
-            label="Descargar Todas las Acciones DDL",
+            label="Descargar Scripts DDL",
             data=combined_ddl,
             file_name=f"stats_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
@@ -337,7 +344,25 @@ def main():
                 logger.info(f"Analysis complete. Total findings: {len(st.session_state.mod2_findings)}")
             
             connection.close()
-            st.success(f"Análisis completado. Total hallazgos: {len(st.session_state.mod2_findings)}")
+            
+            # Log execution
+            log_execution(
+                ticket="Statistics_Management",
+                project_name="Teradata DBA Services",
+                system_name="Production",
+                resource_name="TD_PROD",
+                issue="Statistics Analysis",
+                request_by="System",
+                comments=f"Statistics analysis completed with {len(st.session_state.mod2_findings)} findings"
+            )
+            
+            # Custom success message
+            st.markdown(
+                "<div style='background-color: #d1e7dd; color: #0f5132; padding: 6px 12px; "
+                "border-radius: 4px; font-size: 0.85rem; border: 1px solid #badbcc; "
+                "margin-top: 10px;'>Análisis completado exitosamente.</div>", 
+                unsafe_allow_html=True
+            )
             
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
@@ -347,11 +372,17 @@ def main():
     if st.session_state.mod2_analyzed_data:
         st.markdown("## Resultados del Análisis")
         
-        display_kpi_cards(st.session_state.mod2_analyzed_data)
-        st.markdown("---")
-        display_findings_table(st.session_state.mod2_analyzed_data)
-        st.markdown("---")
-        display_ddl_actions(st.session_state.mod2_analyzed_data)
+        # Standard tabs: ["Datos Analizados", "Hallazgos", "Scripts de Remediación"]
+        tab1, tab2, tab3 = st.tabs(["Datos Analizados", "Hallazgos", "Scripts de Remediación"])
+        
+        with tab1:
+            display_kpi_cards(st.session_state.mod2_analyzed_data)
+        
+        with tab2:
+            display_findings_table(st.session_state.mod2_analyzed_data)
+        
+        with tab3:
+            display_ddl_actions(st.session_state.mod2_analyzed_data)
 
 
 if __name__ == "__main__":

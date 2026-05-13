@@ -9,14 +9,42 @@
 -- Environment : Teradata 20
 -- =============================================================================
 
+WITH Tamaño_Tablas AS (
+    SELECT 
+        ts.DatabaseName, 
+        ts.TableName, 
+        SUM(ts.CurrentPerm) AS CurrentPerm
+    FROM DBC.TableSizeV ts
+    INNER JOIN DBC.TablesV tb 
+        ON ts.DatabaseName = tb.DatabaseName 
+       AND ts.TableName    = tb.TableName
+    WHERE tb.TableKind = 'T'
+    GROUP BY 1, 2
+)
 SELECT 
-    s.DatabaseName, 
-    s.TableName,
-    s.RowCount AS Stats_RowCount,
-    CAST(SUM(ts.CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Actual_Size_GB
-FROM DBC.StatsV s 
-INNER JOIN DBC.TableSizeV ts ON s.DatabaseName = ts.DatabaseName AND s.TableName = ts.TableName
-WHERE s.RowCount = 0 
-GROUP BY 1, 2, 3
-HAVING SUM(ts.CurrentPerm) > 0
-ORDER BY Actual_Size_GB DESC;
+    S.DatabaseName, 
+    S.TableName, 
+    CAST(T.CurrentPerm / (1024.0**3) AS DECIMAL(18,4)) AS Size_GB,
+    MIN(S.RowCount)                                    AS Stats_RowCount,
+    CAST(MAX(S.LastCollectTimeStamp) AS DATE)          AS Ultima_Recoleccion
+FROM DBC.StatsV S
+INNER JOIN Tamaño_Tablas T 
+    ON S.DatabaseName = T.DatabaseName 
+   AND S.TableName    = T.TableName
+WHERE S.RowCount = 0      -- Es la única métrica confiable para tablas vacías
+  AND S.StatsId <> 0      -- Excluye Summary Stats generales
+  AND S.DatabaseName NOT IN (
+        'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT',
+        'TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM',
+        'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
+        'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA'
+  )
+GROUP BY 
+    S.DatabaseName, 
+    S.TableName, 
+    Size_GB
+ORDER BY 
+    Size_GB DESC, 
+    S.DatabaseName, 
+    S.TableName;
+

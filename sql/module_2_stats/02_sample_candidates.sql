@@ -9,28 +9,41 @@
 -- Environment : Teradata 20
 -- =============================================================================
 
+WITH Tamaño_Tablas AS (
+    SELECT 
+        ts.DatabaseName, 
+        ts.TableName, 
+        SUM(ts.CurrentPerm) AS CurrentPerm
+    FROM DBC.TableSizeV ts
+    INNER JOIN DBC.TablesV tb 
+        ON ts.DatabaseName = tb.DatabaseName 
+       AND ts.TableName    = tb.TableName
+    WHERE tb.TableKind = 'T'
+    GROUP BY 1, 2
+)
 SELECT 
     S.DatabaseName, 
     S.TableName, 
-    S.ColumnName,
-    CAST(SUM(T.CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Size_GB,
-    S.RowCount,
-    S.UniqueValueCount,
-    CAST(CAST(S.UniqueValueCount AS DECIMAL(18,4)) / NULLIF(S.RowCount, 0) AS DECIMAL(18,4)) AS Uniqueness_Ratio,
-    S.LastCollectTimeStamp,
-    S.SampleSizePct
+    CAST(T.CurrentPerm / (1024.0**3) AS DECIMAL(18,4)) AS Size_GB,
+    MIN(S.RowCount)                                    AS Stats_RowCount,
+    CAST(MAX(S.LastCollectTimeStamp) AS DATE)          AS Ultima_Recoleccion
 FROM DBC.StatsV S
-INNER JOIN (
-    SELECT DatabaseName, TableName, SUM(CurrentPerm) AS CurrentPerm
-    FROM DBC.TableSizeV
-    GROUP BY 1, 2
-) T 
+INNER JOIN Tamaño_Tablas T 
     ON S.DatabaseName = T.DatabaseName 
-    AND S.TableName = T.TableName
-WHERE S.RowCount > 100000000
-  AND (T.CurrentPerm / (1024.0**3)) > 50
-  AND S.ColumnName <> '*'
-  AND S.SampleSizePct IN (0, 100)
-GROUP BY 1, 2, 3, 5, 6, 7, 8, 9
-HAVING Uniqueness_Ratio >= 0.95
-ORDER BY Size_GB DESC;
+   AND S.TableName    = T.TableName
+WHERE S.RowCount = 0      -- Es la única métrica confiable para tablas vacías
+  AND S.StatsId <> 0      -- Excluye Summary Stats generales
+  AND S.DatabaseName NOT IN (
+        'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT',
+        'TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM',
+        'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
+        'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA','LockLogShredder'
+  )
+GROUP BY 
+    S.DatabaseName, 
+    S.TableName, 
+    Size_GB
+ORDER BY 
+    Size_GB DESC, 
+    S.DatabaseName, 
+    S.TableName;

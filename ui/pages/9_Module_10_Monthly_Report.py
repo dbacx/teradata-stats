@@ -130,11 +130,32 @@ def display_execution_form():
 
 
 def main():
-    """Main function for Module 10 Monthly Report page."""
+    """Main page entry point."""
     inject_custom_css()
     initialize_session_state()
     
+    # Corporate CSS for button styling
+    st.markdown(
+        """
+        <style>
+        /* Estilo corporativo para el boton de ejecucion */
+        div.stButton > button:first-child {
+            background-color: #FD6724 !important;
+            color: white !important;
+            font-weight: bold !important;
+            border-color: #FD6724 !important;
+        }
+        div.stButton > button:first-child:hover {
+            background-color: #e55a1d !important;
+            border-color: #e55a1d !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
     st.title("Monthly Report")
+    st.markdown("*Generación Automatizada de Reportes Mensuales en PowerPoint*")
     st.markdown("---")
     
     # Date selection
@@ -160,7 +181,7 @@ def main():
     st.markdown("---")
     
     # Execute button for batch execution
-    if st.button("Ejecutar Reportes (Batch)"):
+    if st.button("Ejecutar Analisis"):
         try:
             # Get connection
             teradata_conn = TeradataConnection()

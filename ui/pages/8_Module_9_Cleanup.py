@@ -286,6 +286,26 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
+    # Corporate CSS for button styling
+    st.markdown(
+        """
+        <style>
+        /* Estilo corporativo para el boton de ejecucion */
+        div.stButton > button:first-child {
+            background-color: #FD6724 !important;
+            color: white !important;
+            font-weight: bold !important;
+            border-color: #FD6724 !important;
+        }
+        div.stButton > button:first-child:hover {
+            background-color: #e55a1d !important;
+            border-color: #e55a1d !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
     st.title("Cleanup & Cost Optimization")
     st.markdown("*Identificación de Basura Digital y Ahorro de Espacio en Base de Datos*")
     st.markdown("---")
@@ -300,7 +320,7 @@ def main():
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("Ejecutar Análisis Módulo 9", type="primary"):
+    if st.button("Ejecutar Analisis", type="primary"):
         try:
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):
