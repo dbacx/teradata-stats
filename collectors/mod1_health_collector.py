@@ -1,8 +1,8 @@
 """
-Module 1 Health Collector
+Module 1 System Information Collector
 
-Collects health and connectivity data from Teradata system tables for the
-Health & Connectivity module.
+Collects system information data from Teradata system tables for
+System Information module.
 """
 
 import logging
@@ -14,79 +14,153 @@ from core.base_collector import BaseCollector
 logger = logging.getLogger(__name__)
 
 
-class HealthCollector(BaseCollector):
+class SystemInformationCollector(BaseCollector):
     """
-    Collector for Health & Connectivity Module (Module 1).
+    Collector for System Information Module (Module 1).
     
-    Collects data from 2 components:
-    1. System Information - Version and release information
-    2. Active Sessions - Count of sessions by user
+    Collects data from a single component:
+    1. System Information - Version, release, and capacity information
     """
     
     def __init__(self):
-        """Initialize the Health Collector."""
+        """Initialize System Information Collector."""
         super().__init__(module_name='module_1_health')
-        self.sql_files = [
-            '01_system_info.sql',
-            '02_active_sessions.sql'
-        ]
-        logger.info("Initialized HealthCollector")
+        self.sql_file = '01_system_information.sql'
+        logger.info("Initialized SystemInformationCollector")
     
-    def collect(self, connection, params: Optional[Dict[str, Any]] = None) -> Dict[str, pd.DataFrame]:
+    def collect(self, connection, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
-        Collect health and connectivity data from Teradata.
+        Collect system information data from Teradata.
         
         Args:
             connection: Database connection object
             params: Optional dictionary with parameters (not used in this module)
         
         Returns:
-            Dictionary mapping component names to DataFrames
+            DataFrame containing system information with Metrica and Valor columns
         """
         # Set default parameters
         if params is None:
             params = {}
         
-        results = {}
-        
-        for sql_file in self.sql_files:
-            try:
-                # Extract component name from filename
-                component_name = sql_file.replace('.sql', '')
-                
-                # Read SQL file
-                sql = self.read_sql_file(sql_file)
-                
-                # Replace placeholders
-                sql = self.replace_placeholders(sql, params)
-                
-                # Execute query
-                df = self.execute_query(connection, sql)
-                
-                results[component_name] = df
-                logger.info(f"Collected {len(df)} rows for {component_name}")
-                
-            except Exception as e:
-                logger.error(f"Failed to collect data for {sql_file}: {str(e)}")
-                # Return empty DataFrame for failed component
-                component_name = sql_file.replace('.sql', '')
-                results[component_name] = self._get_empty_dataframe_for_component(component_name)
-        
-        return results
+        try:
+            # Read SQL file
+            sql = self.read_sql_file(self.sql_file)
+            
+            # Replace placeholders
+            sql = self.replace_placeholders(sql, params)
+            
+            # Split SQL content by semicolon and process each query
+            sql_statements = [stmt.strip() for stmt in sql.split(';') if stmt.strip()]
+            
+            all_results = []
+            
+            for i, statement in enumerate(sql_statements):
+                try:
+                    if 'exec pdcrinfo.system_config_rpt' in statement.lower():
+                        # Process hardware macro query
+                        df_hardware = self._process_hardware_macro(connection, statement)
+                        all_results.append(df_hardware)
+                    elif 'select' in statement.lower() and 'dbc.dbcinfo' in statement.lower():
+                        # Process version query
+                        df_version = self._process_version_query(connection, statement)
+                        all_results.append(df_version)
+                    else:
+                        logger.warning(f"Unknown statement type in query {i+1}: {statement[:50]}...")
+                        
+                except Exception as e:
+                    logger.error(f"Failed to execute statement {i+1}: {str(e)}")
+                    # Add error row for failed statement
+                    error_row = pd.DataFrame([{
+                        'Metrica': f'Query {i+1} Error',
+                        'Valor': f'Error: {str(e)[:100]}'
+                    }])
+                    all_results.append(error_row)
+            
+            # Consolidate all results
+            if all_results:
+                consolidated_df = pd.concat(all_results, ignore_index=True)
+                logger.info(f"Collected {len(consolidated_df)} rows for system information")
+                return consolidated_df
+            else:
+                logger.warning("No data collected from any query")
+                return pd.DataFrame(columns=['Metrica', 'Valor'])
+            
+        except Exception as e:
+            logger.error(f"Failed to collect system information: {str(e)}")
+            # Return empty DataFrame on failure
+            return pd.DataFrame(columns=['Metrica', 'Valor'])
     
-    def _get_empty_dataframe_for_component(self, component_name: str) -> pd.DataFrame:
+    def _process_hardware_macro(self, connection, statement: str) -> pd.DataFrame:
         """
-        Return empty DataFrame with expected columns for each component.
+        Process hardware macro query and convert to vertical format.
         
         Args:
-            component_name: Name of the component
+            connection: Database connection object
+            statement: SQL statement containing the hardware macro
         
         Returns:
-            Empty DataFrame with correct schema
+            DataFrame with Metrica and Valor columns
         """
-        if component_name == '01_system_info':
-            return pd.DataFrame(columns=['InfoKey', 'InfoData'])
-        elif component_name == '02_active_sessions':
-            return pd.DataFrame(columns=['UserName', 'SessionCount'])
-        else:
-            return pd.DataFrame()
+        try:
+            # Execute hardware macro query
+            df_hardware = self.execute_query(connection, statement)
+            
+            if df_hardware.empty:
+                logger.warning("Hardware macro returned empty results")
+                return pd.DataFrame([{
+                    'Metrica': 'Hardware Config (PDCR)',
+                    'Valor': 'No data returned from hardware macro'
+                }])
+            
+            # Convert wide DataFrame to vertical format using melt
+            df_vertical = df_hardware.melt(var_name='Metrica', value_name='Valor')
+            
+            # Ensure Valor column is string type to avoid type conflicts
+            df_vertical['Valor'] = df_vertical['Valor'].astype(str)
+            
+            logger.info(f"Processed hardware macro: {len(df_vertical)} metrics extracted")
+            return df_vertical
+            
+        except Exception as e:
+            logger.error(f"Failed to process hardware macro: {str(e)}")
+            # Return error row for PDCR permissions issue
+            return pd.DataFrame([{
+                'Metrica': 'Hardware Config (PDCR)',
+                'Valor': 'Error de permisos o PDCR no habilitado'
+            }])
+    
+    def _process_version_query(self, connection, statement: str) -> pd.DataFrame:
+        """
+        Process version query from DBC.DBCInfo.
+        
+        Args:
+            connection: Database connection object
+            statement: SQL statement for version query
+        
+        Returns:
+            DataFrame with Metrica and Valor columns
+        """
+        try:
+            # Execute version query
+            df_version = self.execute_query(connection, statement)
+            
+            if df_version.empty:
+                logger.warning("Version query returned empty results")
+                return pd.DataFrame([{
+                    'Metrica': 'Database Version',
+                    'Valor': 'Version information not available'
+                }])
+            
+            # Ensure Valor column is string type
+            df_version['Valor'] = df_version['Valor'].astype(str)
+            
+            logger.info(f"Processed version query: {len(df_version)} version records")
+            return df_version
+            
+        except Exception as e:
+            logger.error(f"Failed to process version query: {str(e)}")
+            return pd.DataFrame([{
+                'Metrica': 'Database Version',
+                'Valor': f'Error retrieving version: {str(e)[:50]}'
+            }])
