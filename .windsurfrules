@@ -1,49 +1,267 @@
-# PROJECT BRIEF: Framework de Automatización de Estadísticas Teradata (TD-Stats-Optimizer)
+# REGLAS OBLIGATORIAS DE DESARROLLO — TD-Stats-Optimizer
+# Última actualización: 2026-05-14
+# Fuente de verdad: árbol de directorios y código fuente real del proyecto.
 
-## 1. Contexto del Proyecto
-Herramienta analítica automatizada en Python para optimizar estadísticas en Teradata. El proceso extrae metadata del diccionario (DBC, PDCRINFO), la procesa en Pandas mediante un "Motor de Reglas", y acciona recomendaciones DDL.
+## 1. Arquitectura del Proyecto (10 Módulos)
 
-## 2. Rol de la IA y Restricciones de Desarrollo
-* Actúa como Data Engineer y DBA Senior en Teradata.
-* **Flujo de Trabajo:** El usuario trabaja en ventanas cortas (2 horas). Genera código modular, atómico, y listo para probar de forma asilada.
-* **Seguridad:** Usa `.env` para credenciales. Nunca hardcodees.
+El sistema está organizado en 10 módulos funcionales, cada uno con su propio
+Collector (`collectors/`), Analyzer (`analyzers/`) y página UI (`ui/pages/`).
 
-## 3. Arquitectura y Stack
-* Python 3.10+, `teradatasql`, `pandas`, `streamlit`.
-* `core/`: Conexión (Query Band) y Esquemas (`schemas.py`).
-* `collectors/`: Extracción masiva (DataFrames).
-* `analyzers/`: Motor de Reglas basado en el Patrón Estrategia.
-  - Deberá existir un `base_rule.py` (Clase abstracta).
-  - Un `engine.py` (Ejecutor).
-  - Una subcarpeta `rules/` donde CADA una de las 15 validaciones tendrá su propio archivo independiente (ej. `rule_01_unused.py`).
-* `skills/`: Generación DDL y exportables.
-* `ui/`: Streamlit MVP.
+| Módulo | Collector                        | Analyzer                          | UI Page                              |
+|--------|----------------------------------|-----------------------------------|--------------------------------------|
+| 1      | mod1_health_collector.py         | mod1_health_analyzer.py           | 1_System_Information.py              |
+| 2      | mod2_stats_collector.py          | mod2_stats_analyzer.py            | 2_Module_2_Statistics.py             |
+| 3      | mod3_performance_collector.py    | mod3_performance_analyzer.py      | 5_Performance_Assessment.py          |
+| 4      | mod4_space_collector.py          | mod4_space_analyzer.py            | 2_Space.py                           |
+| 5      | mod5_config_collector.py         | mod5_config_analyzer.py           | 4_Database_Query_Logging.py          |
+| 6      | mod6_security_collector.py       | mod6_security_analyzer.py         | 3_Security.py                        |
+| 7      | mod7_schema_collector.py         | mod7_schema_analyzer.py           | 6_Module_7_Schema.py                 |
+| 8      | mod8_hardware_collector.py       | mod8_hardware_analyzer.py         | 7_Module_8_Hardware.py               |
+| 9      | mod9_cleanup_collector.py        | mod9_cleanup_analyzer.py          | 8_Module_9_Cleanup.py                |
+| 10     | mod10_monthly_collector.py       | mod10_monthly_analyzer.py         | 9_Module_10_Monthly_Report.py        |
 
-## 4. Regla Estricta de Performance Teradata
-* **PROHIBIDO:** Usar bucles en Python para lanzar sentencias DDL/SHOW registro por registro.
-* Toda lógica analítica debe ocurrir en memoria usando Pandas tras una sola consulta masiva inicial a Teradata.
+Adicionalmente, `ui/app.py` actúa como Home Page e integra el motor de 16 reglas
+del Módulo 2 (RulesEngine + `analyzers/rules/`).
 
-## 5. CATÁLOGO DE METADATOS Y ESQUEMAS (REGLA DE ORO)
-Toda la estructura exacta, DDLs y nombres de columnas válidas de las vistas de Teradata (`DBC.StatsV`, `DBC.TablesV`, `DBC.TableSizeV`, `DBC.ObjectUsage`, y vistas de `PDCRINFO`) están centralizados y documentados en el archivo:
-**`core/schemas.py`**
+---
 
-**CRÍTICO:** Antes de escribir o refactorizar cualquier módulo en `collectors/` o `analyzers/`, **DEBES leer obligatoriamente `core/schemas.py`**. 
-Tienes estrictamente prohibido adivinar, asumir o inventar nombres de columnas SQL que no estén explícitamente declarados en el docstring del DDL o en las listas de columnas de ese archivo. 
-Todo script de extracción debe importar y usar la función `validate_columns` para validar la integridad del DataFrame.
+## 2. Separación Estricta MVC
 
-## 6. Lógica de Negocio (Reglas de Validación a Implementar)
-1. Unused Objects
-2. Sample Candidates
-3. Missing at PARTITION level
-4. Missing at Table Level
-5. Missing at Index Level
-6. Stale Stats
-7. Zero Stats
-8. Multicolumn
-9. Skipped and Sample
-10. DBC Recommendations
-11. Redundant Stats
-12. Extrapolation
-13. Analyze Feature
-14. Missing on Join Columns
-15. Dictionary Bloat
+La arquitectura sigue una separación estricta de responsabilidades en cuatro capas:
+
+### 2.1 SQL Puro → `sql/`
+- Contiene EXCLUSIVAMENTE archivos `.sql` organizados en subcarpetas por módulo
+  (`sql/module_1_health/`, `sql/module_2_stats/`, ..., `sql/module_10_monthly_report/`).
+- **PROHIBIDO** escribir SQL inline en Collectors o Analyzers. Toda consulta debe
+  residir en un archivo `.sql` y leerse mediante `BaseCollector.read_sql_file()`.
+- Los placeholders en SQL usan sintaxis `{placeholder}` y se reemplazan con
+  `BaseCollector.replace_placeholders(sql, params)`.
+
+### 2.2 Extracción de Datos → `collectors/`
+- Cada Collector hereda de `core.base_collector.BaseCollector` (clase abstracta).
+- Debe implementar el método `collect(connection, params) -> pd.DataFrame | Dict[str, pd.DataFrame]`.
+- Responsabilidad ÚNICA: leer archivos SQL, ejecutar queries y devolver DataFrames crudos.
+- **PROHIBIDO** aplicar lógica de negocio, cálculos de severidad o generación de DDL en un Collector.
+- El patrón estándar es: `read_sql_file()` → `replace_placeholders()` → `execute_query()`.
+
+### 2.3 Lógica de Negocio → `analyzers/`
+- Cada Analyzer hereda de `core.base_analyzer.BaseAnalyzer` (clase abstracta).
+- Debe implementar el método `run(data, config) -> pd.DataFrame | Dict[str, pd.DataFrame]`.
+- Responsabilidad ÚNICA: recibir DataFrames del Collector, aplicar reglas de negocio,
+  calcular severidades (`Severity` enum: CRITICAL, HIGH, MEDIUM, LOW, INFO),
+  generar columnas `DDL_Statement` / `DDL_Action`, y registrar findings con `add_finding()`.
+- **PROHIBIDO** ejecutar SQL o acceder a la conexión de base de datos desde un Analyzer.
+
+### 2.4 Visualización → `ui/pages/`
+- Cada página Streamlit sigue el flujo: Conectar → Collector.collect() → Analyzer.run() → Renderizar.
+- Responsabilidad ÚNICA: presentar resultados al usuario final.
+- **PROHIBIDO** implementar lógica de negocio en la capa de UI.
+
+---
+
+## 3. Motor de 16 Reglas (Módulo 2 — Patrón Estrategia)
+
+### 3.1 Estructura
+- `analyzers/base_rule.py` → Clase abstracta `BaseStatsRule` con método `analyze(context) -> pd.DataFrame`.
+- `analyzers/engine.py` → `RulesEngine` que registra y ejecuta las 16 reglas.
+- `analyzers/rules/rule_XX_nombre.py` → Una regla por archivo, cada una hereda de `BaseStatsRule`.
+
+### 3.2 Catálogo de Reglas
+
+| Archivo                       | Clase              | Descripción                        |
+|-------------------------------|--------------------|------------------------------------|
+| rule_01_unused.py             | Rule01Unused       | Objetos sin uso reciente           |
+| rule_02_sample.py             | Rule02Sample       | Candidatos a USING SAMPLE          |
+| rule_03_partition_missing.py  | Rule03PartitionMissing | Stats faltantes a nivel PARTITION |
+| rule_04_table_missing.py      | Rule04TableMissing | Stats faltantes a nivel tabla      |
+| rule_05_index_missing.py      | Rule05IndexMissing | Stats faltantes a nivel índice     |
+| rule_06_stale.py              | Rule06Stale        | Stats desactualizadas              |
+| rule_07_zero_stats.py         | Rule07ZeroStats    | Stats con RowCount=0               |
+| rule_08_multicolumn.py        | Rule08Multicolumn  | Problemas de MaxValueLength        |
+| rule_09_skipped_sample.py     | Rule09SkippedSample| Stats con skip o sample            |
+| rule_10_dbc_missing.py        | Rule10DBCMissing   | Stats faltantes en DBC/PDCR        |
+| rule_11_redundant.py          | Rule11Redundant    | Stats redundantes                  |
+| rule_12_extrapolation.py      | Rule12Extrapolation| Riesgo de extrapolación            |
+| rule_13_analyze.py            | Rule13Analyze      | Samples hardcoded                  |
+| rule_14_join_columns.py       | Rule14JoinColumns  | Columnas de join sin stats         |
+| rule_15_bloat.py              | Rule15Bloat        | Inflado del diccionario            |
+| rule_16_urgent_missing.py     | Rule16UrgentMissing| Stats urgentes faltantes           |
+
+### 3.3 Convención para Nuevas Reglas
+1. Crear archivo `analyzers/rules/rule_NN_nombre.py`.
+2. La clase debe heredar de `BaseStatsRule` e implementar `analyze(context)`.
+3. Registrar en `RulesEngine.register_all_rules()` dentro de `analyzers/engine.py`.
+4. Usar operaciones vectorizadas de Pandas — **PROHIBIDO** iterar fila por fila.
+
+---
+
+## 4. Capa de Soporte (`core/`)
+
+| Archivo              | Responsabilidad                                                   |
+|----------------------|-------------------------------------------------------------------|
+| connection.py        | Conexión segura a Teradata con Query Band (`TeradataConnection`). |
+| config.py            | Umbrales globales (`THRESHOLDS`) y lista de bases de sistema.     |
+| base_collector.py    | Clase abstracta `BaseCollector` (lectura SQL, ejecución queries). |
+| base_analyzer.py     | Clase abstracta `BaseAnalyzer` (findings, severidades, DDL).     |
+| system_databases.txt | Lista de bases de datos de sistema excluidas del análisis.        |
+
+---
+
+## 5. Capa de Acciones (`skills/`)
+
+| Archivo           | Clase          | Responsabilidad                                       |
+|-------------------|----------------|-------------------------------------------------------|
+| recommender.py    | DDLRecommender | Genera COLLECT/DROP STATISTICS DDL desde DataFrames.  |
+| reporter.py       | ExcelReporter  | Genera reportes Excel con hallazgos y DDL.            |
+| ppt_reporter.py   | PPTReporter    | Genera reportes ejecutivos PowerPoint.                |
+
+---
+
+## 6. Regla de UI — Botones de Ejecución
+
+- El botón de ejecución principal debe llamarse **"Ejecutar Analisis"** (sin tilde).
+- En las páginas de módulo (`ui/pages/`), el botón se ubica en el **main layout**
+  (área de contenido), **nunca** en el sidebar.
+  Ejemplo: `st.button("Ejecutar Analisis", type="primary")`.
+- En `ui/app.py` (Home), el botón se ubica en el **sidebar**:
+  `st.sidebar.button("Ejecutar Análisis", type="primary")`.
+- Todo botón de ejecución debe tener inyección de CSS corporativo con color `#FD6724`:
+  ```python
+  st.markdown("""
+  <style>
+  div.stButton > button:first-child {
+      background-color: #FD6724 !important;
+      color: white !important;
+      font-weight: bold !important;
+      border-color: #FD6724 !important;
+  }
+  div.stButton > button:first-child:hover {
+      background-color: #e55a1d !important;
+      border-color: #e55a1d !important;
+  }
+  </style>
+  """, unsafe_allow_html=True)
+  ```
+
+---
+
+## 7. Regla de Renderizado — Uso de `st.tabs` y Comprobación de Tipos
+
+- Los resultados de módulos que devuelven **Dict[str, pd.DataFrame]** deben renderizarse
+  usando `st.tabs`, iterando sobre las claves del diccionario.
+- **PROHIBIDO** asumir que el output de un Collector o Analyzer es un DataFrame único
+  y verificar con `.empty`. Siempre usar `isinstance()` para determinar el tipo:
+  ```python
+  if isinstance(result, dict):
+      tab_names = list(result.keys())
+      tabs = st.tabs(tab_names)
+      for tab, (key, df) in zip(tabs, result.items()):
+          with tab:
+              if isinstance(df, pd.DataFrame) and not df.empty:
+                  st.dataframe(df, use_container_width=True)
+              else:
+                  st.info(f"Sin datos para {key}")
+  elif isinstance(result, pd.DataFrame):
+      if not result.empty:
+          st.dataframe(result, use_container_width=True)
+      else:
+          st.warning("No se encontraron datos")
+  ```
+- En `ui/app.py`, las 16 reglas se muestran en pestañas individuales con
+  `st.tabs([...])` y se itera sobre `rule_results.get(rule_key, pd.DataFrame())`.
+
+---
+
+## 8. Tolerancia a Fallos
+
+### 8.1 Collectors
+- Todo método `collect()` debe envolver la ejecución de cada query en `try...except`.
+- En caso de fallo de un componente, registrar el error con `logger.error()` y
+  devolver un DataFrame vacío para ese componente, permitiendo que los demás continúen.
+  ```python
+  try:
+      df = self.execute_query(connection, sql)
+      results[component_name] = df
+  except Exception as e:
+      logger.error(f"Failed to collect {component_name}: {str(e)}")
+      results[component_name] = pd.DataFrame()
+  ```
+
+### 8.2 Analyzers
+- Todo método `run()` o `analyze()` debe verificar si el DataFrame de entrada está vacío
+  antes de procesar: `if df.empty: return df`.
+- Verificar columnas requeridas antes de operar:
+  ```python
+  required_columns = ['DatabaseName', 'TableName']
+  if not all(col in df.columns for col in required_columns):
+      logger.warning(f"Missing columns. Required: {required_columns}")
+      return df
+  ```
+
+### 8.3 UI Pages
+- Las páginas UI deben envolver el flujo completo (connect → collect → analyze)
+  en `try...except` con `st.error()` para errores y `st.spinner()` para feedback.
+
+---
+
+## 9. Reglas de Performance Teradata
+
+- **PROHIBIDO** usar bucles en Python para ejecutar sentencias DDL/SHOW registro por registro
+  contra Teradata.
+- Toda lógica analítica debe operar en memoria usando Pandas tras una sola consulta masiva
+  inicial a Teradata.
+- Los DDL generados deben acumularse como listas de strings y presentarse al usuario
+  como bloque descargable, nunca ejecutarse automáticamente.
+
+---
+
+## 10. Stack Tecnológico
+
+- Python 3.10+
+- `teradatasql` — Driver de conexión
+- `pandas` — Procesamiento de datos en memoria
+- `streamlit` — Interfaz web (layout wide, sidebar expandido)
+- `plotly` — Visualizaciones interactivas (scatter, bar charts)
+- `python-pptx` — Generación de reportes PowerPoint
+- `openpyxl` — Generación de reportes Excel
+- `python-dotenv` — Gestión segura de credenciales desde `.env`
+
+---
+
+## 11. Seguridad
+
+- Las credenciales de conexión se gestionan exclusivamente con variables de entorno
+  cargadas desde `.env` mediante `python-dotenv`. **PROHIBIDO** hardcodear credenciales.
+- Query Band (`App=TDStatsOpt;`) se inyecta automáticamente en cada sesión para
+  auditoría y trazabilidad.
+- La lista de bases de datos de sistema excluidas se gestiona en `core/system_databases.txt`.
+
+---
+
+## 12. Navegación UI
+
+- El entry point es `ui/main.py`, que usa `st.navigation()` para controlar el orden
+  de páginas en el sidebar.
+- Las páginas se agrupan bajo la sección "Módulos".
+- El logo corporativo se carga con `st.logo("logo.jpg")`.
+- Todas las páginas inyectan CSS personalizado para modo compacto (fuente Inter,
+  métricas reducidas, gaps mínimos).
+
+---
+
+## 13. Utilidades
+
+- `utils/csv_logger.py` → `log_execution()` registra cada ejecución de módulo
+  con ticket, proyecto, sistema, recurso, issue, solicitante y comentarios.
+- `scripts/standardize_module10_queries.py` → Script de estandarización de queries
+  del Módulo 10.
+
+---
+
+## 14. Convenciones de Código
+
+- Cada módulo Python incluye docstring descriptivo al inicio del archivo.
+- Logging con `logging.getLogger(__name__)` en cada módulo.
+- Path routing con `pathlib.Path(__file__).resolve()` para calcular la raíz del proyecto.
+- Los imports locales usan `sys.path.insert(0, project_root)` para asegurar resolución.
+- Umbrales configurables se centralizan en `core/config.py` (`THRESHOLDS` dict).
