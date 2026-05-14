@@ -6,9 +6,9 @@
 
 | Vista | Propósito | Disponibilidad |
 |-------|-----------|---------------|
-| `DBC.QryLogV` / `PDCRINFO.DBQLogTbl` | Distribución de queries por workload | TD 16.x+ |
+| `DBC.QryLogV` / `PDCRINFO.DBQLogTbl` | Distribución de queries por workload | TD 17.x+ |
 | `TDWM.RuleSetsV` | Reglas de clasificación activas | Requiere permisos TDWM |
-| `DBC.ResUsageSpma` | CPU por AMP/período | TD 16.x+ |
+| `DBC.ResUsageSpma` | CPU por AMP/período | TD 17.x+ |
 
 ### Patrón a seguir
 

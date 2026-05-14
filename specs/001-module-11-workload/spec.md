@@ -112,6 +112,6 @@ puedan optimizar la configuración de workloads.
 
 ## Notas Adicionales
 
-- Las vistas relevantes de TDWM varían entre versiones de Teradata (16.x vs 17.x).
+- Las vistas relevantes de TDWM varían entre versiones de Teradata (17.x vs 20.x).
   Verificar disponibilidad antes de implementar.
 - Referencia: [Teradata Workload Management Guide](https://docs.teradata.com/)
