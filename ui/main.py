@@ -5,9 +5,14 @@ This module provides the main navigation using Streamlit's st.navigation API
 to control the order of pages in the sidebar.
 """
 
+import pandas as pd
 import streamlit as st
 import sys
 import os
+
+
+# Blindaje contra dataframes masivos en Streamlit
+pd.set_option("styler.render.max_elements", 2000000)
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
