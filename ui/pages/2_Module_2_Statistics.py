@@ -90,6 +90,18 @@ def initialize_session_state():
         st.session_state.mod2_findings = None
 
 
+def _normalize_to_dataframe(result) -> pd.DataFrame:
+    """Normalize a result (DataFrame, list, or dict) into a single DataFrame."""
+    if isinstance(result, pd.DataFrame):
+        return result
+    if isinstance(result, list):
+        return pd.DataFrame(result) if result else pd.DataFrame()
+    if isinstance(result, dict):
+        frames = [v for v in result.values() if isinstance(v, pd.DataFrame) and not v.empty]
+        return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    return pd.DataFrame()
+
+
 def display_kpi_cards(analyzed_data: dict):
     """Display KPI cards for all 10 components."""
     st.subheader("KPI Cards - Statistics Management")
@@ -112,7 +124,7 @@ def display_kpi_cards(analyzed_data: dict):
     total_findings = 0
     
     for component_name, component_key in component_names:
-        df = analyzed_data.get(component_key, pd.DataFrame())
+        df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         if not df.empty and 'Severity' in df.columns:
             for severity in severity_counts:
                 severity_counts[severity] += len(df[df['Severity'] == severity])
@@ -136,7 +148,7 @@ def display_kpi_cards(analyzed_data: dict):
     # Display component counts
     cols = st.columns(5)
     for i, (component_name, component_key) in enumerate(component_names):
-        df = analyzed_data.get(component_key, pd.DataFrame())
+        df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         count = len(df)
         with cols[i % 5]:
             st.metric(component_name, count)
@@ -165,11 +177,19 @@ def display_findings_table(analyzed_data: dict):
     }
     
     for component_key, component_name in component_names.items():
-        df = analyzed_data.get(component_key, pd.DataFrame())
-        if not df.empty:
-            df_copy = df.copy()
-            df_copy['Component'] = component_name
-            all_findings.append(df_copy)
+        result = analyzed_data.get(component_key, pd.DataFrame())
+        if isinstance(result, dict):
+            for query_name, df_result in result.items():
+                if isinstance(df_result, pd.DataFrame) and not df_result.empty:
+                    df_copy = df_result.copy()
+                    df_copy['Component'] = f"{component_name} - {query_name}"
+                    all_findings.append(df_copy)
+        else:
+            df = _normalize_to_dataframe(result)
+            if not df.empty:
+                df_copy = df.copy()
+                df_copy['Component'] = component_name
+                all_findings.append(df_copy)
     
     if not all_findings:
         st.success("No se encontraron hallazgos")
@@ -249,7 +269,7 @@ def display_ddl_actions(analyzed_data: dict):
     ddl_actions = {'COLLECT': [], 'DROP': [], 'REFRESH': [], 'RECREATE': [], 'REVIEW': []}
     
     for component_key, component_name in component_names.items():
-        df = analyzed_data.get(component_key, pd.DataFrame())
+        df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         if not df.empty and 'DDL_Statement' in df.columns and 'DDL_Action' in df.columns:
             for _, row in df.iterrows():
                 action = row['DDL_Action']
@@ -370,19 +390,30 @@ def main():
     
     # Display results if available
     if st.session_state.mod2_analyzed_data:
-        st.markdown("## Resultados del Análisis")
-        
-        # Standard tabs: ["Datos Analizados", "Hallazgos", "Scripts de Remediación"]
-        tab1, tab2, tab3 = st.tabs(["Datos Analizados", "Hallazgos", "Scripts de Remediación"])
-        
-        with tab1:
-            display_kpi_cards(st.session_state.mod2_analyzed_data)
-        
-        with tab2:
-            display_findings_table(st.session_state.mod2_analyzed_data)
-        
-        with tab3:
-            display_ddl_actions(st.session_state.mod2_analyzed_data)
+        findings = st.session_state.mod2_findings
+
+        # Validacion segura independiente del tipo de dato
+        if isinstance(findings, pd.DataFrame):
+            has_findings = not findings.empty
+        elif isinstance(findings, (list, dict)):
+            has_findings = len(findings) > 0
+        else:
+            has_findings = bool(findings)
+
+        if has_findings:
+            st.markdown("## Resultados del Análisis")
+            
+            # Standard tabs: ["Datos Analizados", "Hallazgos", "Scripts de Remediación"]
+            tab1, tab2, tab3 = st.tabs(["Datos Analizados", "Hallazgos", "Scripts de Remediación"])
+            
+            with tab1:
+                display_kpi_cards(st.session_state.mod2_analyzed_data)
+            
+            with tab2:
+                display_findings_table(st.session_state.mod2_analyzed_data)
+            
+            with tab3:
+                display_ddl_actions(st.session_state.mod2_analyzed_data)
 
 
 if __name__ == "__main__":
