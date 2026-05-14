@@ -27,29 +27,38 @@ WITH Tamaño_Tablas AS (
     GROUP BY 1, 2
 )
 SELECT 
-    S.DatabaseName, 
-    S.TableName, 
-    CAST(T.CurrentPerm / (1024.0**3) AS DECIMAL(18,4)) AS Size_GB,
-    MIN(S.RowCount)                                    AS Stats_RowCount,
-    CAST(MAX(S.LastCollectTimeStamp) AS DATE)          AS Ultima_Recoleccion
-FROM DBC.StatsV S
-INNER JOIN Tamaño_Tablas T 
-    ON S.DatabaseName = T.DatabaseName 
-   AND S.TableName    = T.TableName
-WHERE S.RowCount = 0      -- Es la única métrica confiable para tablas vacías
-  AND S.StatsId <> 0      -- Excluye Summary Stats generales
-  AND S.DatabaseName NOT IN (
-        'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT',
-        'TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM',
-        'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
-        'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA'
-  )
-GROUP BY 
-    S.DatabaseName, 
-    S.TableName, 
-    Size_GB
+    src.DatabaseName                                        AS DatabaseName,
+    src.TableName                                           AS TableName,
+    'TABLE LEVEL'                                           AS ObjectName,
+    'Zero Statistics'                                       AS FindingCategory,
+    CAST(src.Ultima_Recoleccion AS TIMESTAMP(0))            AS LastCollectTimeStamp,
+    'COLLECT STATISTICS ' || TRIM(src.DatabaseName) || '.' || TRIM(src.TableName) || ';' AS RemediationDDL
+FROM (
+    SELECT 
+        S.DatabaseName, 
+        S.TableName, 
+        CAST(T.CurrentPerm / (1024.0**3) AS DECIMAL(18,4)) AS Size_GB,
+        MIN(S.RowCount)                                    AS Stats_RowCount,
+        CAST(MAX(S.LastCollectTimeStamp) AS DATE)          AS Ultima_Recoleccion
+    FROM DBC.StatsV S
+    INNER JOIN Tamaño_Tablas T 
+        ON S.DatabaseName = T.DatabaseName 
+       AND S.TableName    = T.TableName
+    WHERE S.RowCount = 0
+      AND S.StatsId <> 0
+      AND S.DatabaseName NOT IN (
+            'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT',
+            'TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM',
+            'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
+            'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA'
+      )
+    GROUP BY 
+        S.DatabaseName, 
+        S.TableName, 
+        Size_GB
+) src
 ORDER BY 
-    Size_GB DESC, 
-    S.DatabaseName, 
-    S.TableName;
+    src.Size_GB DESC, 
+    src.DatabaseName, 
+    src.TableName;
 

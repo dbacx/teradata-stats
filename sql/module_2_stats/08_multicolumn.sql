@@ -15,18 +15,18 @@
 -- =============================================================================
 
 WITH Tablas_Con_Datos AS (
-    -- Validamos que la tabla tenga espacio físico (datos reales)
     SELECT DatabaseName, TableName
     FROM DBC.TableSizeV
     GROUP BY 1, 2
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    s.DatabaseName, 
-    s.TableName,
-    s.ColumnName,
-    s.ExpressionCount,
-    s.MaxValueLength
+    s.DatabaseName                                          AS DatabaseName, 
+    s.TableName                                             AS TableName,
+    TRIM(s.ColumnName)                                      AS ObjectName,
+    'Multicolumn MaxValueLength'                            AS FindingCategory,
+    s.LastCollectTimeStamp                                   AS LastCollectTimeStamp,
+    'COLLECT STATISTICS USING MAXVALUELENGTH ' || TRIM(CAST(s.MaxValueLength * 2 AS VARCHAR(10))) || ' ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ' COLUMN (' || TRIM(s.ColumnName) || ');' AS RemediationDDL
 FROM DBC.StatsV s
 INNER JOIN DBC.TablesV t 
     ON s.DatabaseName = t.DatabaseName 
@@ -35,9 +35,9 @@ INNER JOIN Tablas_Con_Datos td
     ON s.DatabaseName = td.DatabaseName
     AND s.TableName = td.TableName
 WHERE s.ExpressionCount > 1 
-  AND s.MaxValueLength <= 25 -- Omitimos las que ya tienen USING MAXVALUELENGTH explícito (> 25)
-  AND t.TableKind = 'T'      -- Solo tablas físicas permanentes
-  AND s.StatsId <> 0         -- Excluimos las estadísticas de resumen (Summary Stats)
+  AND s.MaxValueLength <= 25
+  AND t.TableKind = 'T'
+  AND s.StatsId <> 0
   AND s.DatabaseName NOT IN (
         'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT',
         'TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM',

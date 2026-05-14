@@ -14,16 +14,18 @@
 -- =============================================================================
 
 WITH Tablas_Con_Datos AS (
-    -- Validamos que la tabla tenga espacio físico (datos reales)
     SELECT DatabaseName, TableName
     FROM DBC.TableSizeV
     GROUP BY 1, 2
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    ic.DatabaseName, 
-    ic.TableName,
-    t.PartitioningLevels
+    ic.DatabaseName                                         AS DatabaseName, 
+    ic.TableName                                            AS TableName,
+    'PARTITION'                                             AS ObjectName,
+    'Missing Partition Stats'                               AS FindingCategory,
+    CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
+    'COLLECT STATISTICS COLUMN (PARTITION) ON ' || TRIM(ic.DatabaseName) || '.' || TRIM(ic.TableName) || ';' AS RemediationDDL
 FROM DBC.IndexConstraints ic
 INNER JOIN DBC.TablesV t 
     ON ic.DatabaseName = t.DatabaseName 
@@ -45,6 +47,3 @@ WHERE ic.ConstraintType = 'Q'
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
 ORDER BY ic.DatabaseName, ic.TableName;
-
---sentencia collect statistics
---COLLECT STATISTICS column partition ON DATABASENAME.TABLENAME;

@@ -30,58 +30,54 @@
 --            (not available in any DBC view)
 -- =============================================================================
 
-SELECT 
-    s.DatabaseName, 
-    s.TableName,
-    -- Table size in GB (sum across AMPs)
-    CAST(SUM(t.CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Size_GB,
-    -- Most recent COLLECT STATS execution on this table
-    MAX(CAST(s.LastCollectTimeStamp AS DATE))                AS Last_Stat_Collect,
-    -- Most recent actual access recorded by DBQL ObjectUsage
-    MAX(u.LastAccessTimeStamp)                               AS Last_Actual_Access
-
-FROM DBC.StatsV s   -- Statistics metadata (excludes SUMMARY via StatsId <> 0)
-
--- Table size: join TableSizeV (size per AMP) with TablesV (to get TableKind)
--- TableKind not available in TableSizeV, requires join to TablesV
-INNER JOIN (
-    SELECT ts.DatabaseName, ts.TableName, SUM(ts.CurrentPerm) AS CurrentPerm
-    FROM DBC.TableSizeV ts
-    JOIN DBC.TablesV tb 
-        ON ts.DatabaseName = tb.DatabaseName 
-        AND ts.TableName   = tb.TableName
-    WHERE tb.TableKind = 'T'   -- Permanent tables only
-    GROUP BY 1, 2
-) t ON s.DatabaseName = t.DatabaseName 
-   AND s.TableName    = t.TableName
-
--- Object usage: DBC.ObjectUsage stores IDs (not names), requires resolution
--- via DBC.Dbase and DBC.TVM. LastAccessTimeStamp not exposed in any DBC view.
--- FieldId IS NULL + IndexNumber IS NULL = table-level access (not column/index)
-LEFT JOIN (
+SELECT
+    src.DatabaseName                                        AS DatabaseName,
+    src.TableName                                           AS TableName,
+    'TABLE LEVEL'                                           AS ObjectName,
+    'Unused Objects'                                        AS FindingCategory,
+    CAST(src.Last_Stat_Collect AS TIMESTAMP(0))             AS LastCollectTimeStamp,
+    'COLLECT STATISTICS ' || TRIM(src.DatabaseName) || '.' || TRIM(src.TableName) || ';' AS RemediationDDL
+FROM (
     SELECT 
-        db.DatabaseName,
-        tv.TVMName          AS ObjectName,
-        ou.LastAccessTimeStamp
-    FROM DBC.ObjectUsage ou
-    JOIN DBC.Dbase db ON ou.DatabaseId = db.DatabaseId
-    JOIN DBC.TVM   tv ON ou.ObjectId   = tv.TVMId
-    WHERE ou.FieldId     IS NULL   -- Exclude column/index-level entries
-      AND ou.IndexNumber IS NULL   -- Table-level access only
-) u ON s.DatabaseName = u.DatabaseName 
-   AND s.TableName    = u.ObjectName
+        s.DatabaseName, 
+        s.TableName,
+        CAST(SUM(t.CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Size_GB,
+        MAX(CAST(s.LastCollectTimeStamp AS DATE))                AS Last_Stat_Collect,
+        MAX(u.LastAccessTimeStamp)                               AS Last_Actual_Access
 
-WHERE CAST(s.LastCollectTimeStamp AS DATE) >= CURRENT_DATE - 30  -- Stats collected in last 30 days
-  AND s.DatabaseName <> 'DBC'   -- DBC objects not monitored by ObjectUsage (per Teradata doc)
-  AND s.StatsId <> 0            -- Exclude SUMMARY statistics (COLLECT SUMMARY STATS)
+    FROM DBC.StatsV s
 
-GROUP BY 1, 2
+    INNER JOIN (
+        SELECT ts.DatabaseName, ts.TableName, SUM(ts.CurrentPerm) AS CurrentPerm
+        FROM DBC.TableSizeV ts
+        JOIN DBC.TablesV tb 
+            ON ts.DatabaseName = tb.DatabaseName 
+            AND ts.TableName   = tb.TableName
+        WHERE tb.TableKind = 'T'
+        GROUP BY 1, 2
+    ) t ON s.DatabaseName = t.DatabaseName 
+       AND s.TableName    = t.TableName
 
--- Keep only tables where:
--- 1. No access in last 30 days (or never accessed)
--- 2. Stats were collected after the last actual access (wasted collection)
--- NULL-safe: if Last_Actual_Access IS NULL, both conditions evaluate correctly
-HAVING (Last_Actual_Access < CURRENT_DATE - 30 OR Last_Actual_Access IS NULL)
-   AND (Last_Stat_Collect  > Last_Actual_Access OR Last_Actual_Access IS NULL)
+    LEFT JOIN (
+        SELECT 
+            db.DatabaseName,
+            tv.TVMName          AS ObjectName,
+            ou.LastAccessTimeStamp
+        FROM DBC.ObjectUsage ou
+        JOIN DBC.Dbase db ON ou.DatabaseId = db.DatabaseId
+        JOIN DBC.TVM   tv ON ou.ObjectId   = tv.TVMId
+        WHERE ou.FieldId     IS NULL
+          AND ou.IndexNumber IS NULL
+    ) u ON s.DatabaseName = u.DatabaseName 
+       AND s.TableName    = u.ObjectName
 
-ORDER BY Size_GB DESC;  -- Prioritize largest tables (highest potential CPU savings)
+    WHERE CAST(s.LastCollectTimeStamp AS DATE) >= CURRENT_DATE - 30
+      AND s.DatabaseName <> 'DBC'
+      AND s.StatsId <> 0
+
+    GROUP BY 1, 2
+
+    HAVING (Last_Actual_Access < CURRENT_DATE - 30 OR Last_Actual_Access IS NULL)
+       AND (Last_Stat_Collect  > Last_Actual_Access OR Last_Actual_Access IS NULL)
+) src
+ORDER BY src.Size_GB DESC;

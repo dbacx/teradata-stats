@@ -42,15 +42,12 @@ Impacto_CPU_Tablas AS (
     GROUP BY 1, 2
 )
 SELECT DISTINCT 
-    s.DatabaseName, 
-    s.TableName,
-    s.ColumnName,
-    CAST(s.LastCollectTimeStamp AS DATE) AS Ultima_Evaluacion,
-    s.SampleSizePct,
-    s.StatsSkipCount,
-    s.SampleSignature,
-    CAST(COALESCE(c.Total_Impact_CPU, 0) AS DECIMAL(18,2)) AS Total_Impact_CPU,
-    'COLLECT STATISTICS FOR CURRENT COLUMN (' || TRIM(s.ColumnName) || ') ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';' AS Action_For_Current
+    s.DatabaseName                                          AS DatabaseName, 
+    s.TableName                                             AS TableName,
+    TRIM(s.ColumnName)                                      AS ObjectName,
+    'Skipped/Sample Stats'                                  AS FindingCategory,
+    s.LastCollectTimeStamp                                   AS LastCollectTimeStamp,
+    'COLLECT STATISTICS COLUMN (' || TRIM(s.ColumnName) || ') ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';' AS RemediationDDL
 FROM DBC.StatsV s
 INNER JOIN DBC.TablesV t 
     ON s.DatabaseName = t.DatabaseName 
@@ -63,7 +60,6 @@ LEFT JOIN Impacto_CPU_Tablas c
     AND s.TableName = c.ObjectTableName
 WHERE t.TableKind = 'T'
   AND s.StatsId <> 0 
-  -- Límite estricto: Tolerancia máxima de 2 ciclos de recolección (14 días)
   AND CAST(s.LastCollectTimeStamp AS DATE) < CURRENT_DATE - 14 
   AND (
         (s.SampleSizePct > 0 AND s.SampleSizePct < 100) 
@@ -75,4 +71,4 @@ WHERE t.TableKind = 'T'
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
-ORDER BY Total_Impact_CPU DESC, s.DatabaseName, s.TableName;
+ORDER BY COALESCE(c.Total_Impact_CPU, 0) DESC, s.DatabaseName, s.TableName;

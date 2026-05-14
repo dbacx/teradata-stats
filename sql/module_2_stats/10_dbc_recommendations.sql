@@ -14,7 +14,6 @@
 -- =============================================================================
 
 WITH Tablas_Con_Datos AS (
-    -- Filtramos para que solo evalúe tablas de sistema que realmente están ocupando espacio
     SELECT DatabaseName, TableName
     FROM DBC.TableSizeV
     WHERE DatabaseName IN ('DBC', 'PDCRDATA', 'PDCRINFO')
@@ -22,9 +21,12 @@ WITH Tablas_Con_Datos AS (
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    t.DatabaseName, 
-    t.TableName,
-    t.TableKind
+    t.DatabaseName                                          AS DatabaseName, 
+    t.TableName                                             AS TableName,
+    'TABLE LEVEL'                                           AS ObjectName,
+    'DBC Recommendations'                                   AS FindingCategory,
+    CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
+    'COLLECT STATISTICS ' || TRIM(t.DatabaseName) || '.' || TRIM(t.TableName) || ';' AS RemediationDDL
 FROM DBC.TablesV t
 INNER JOIN Tablas_Con_Datos td
     ON t.DatabaseName = td.DatabaseName
@@ -34,8 +36,7 @@ LEFT JOIN DBC.StatsV s
     AND t.TableName = s.TableName
 WHERE t.DatabaseName IN ('DBC', 'PDCRDATA', 'PDCRINFO') 
   AND t.TableKind = 'T' 
-  AND s.TableName IS NULL -- Garantiza que la tabla no tiene NINGUNA estadística
-  -- Filtro de exclusión estricto para proteger estructuras internas transaccionales/journal
+  AND s.TableName IS NULL
   AND t.TableName NOT IN (
       'ChangedRowJournal', 
       'LocalSessionStatusTable', 

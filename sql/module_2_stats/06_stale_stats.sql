@@ -14,11 +14,20 @@
 -- Environment : Teradata 20
 -- =============================================================================
 
-SELECT DISTINCT 
-    DatabaseName, 
-    TableName,
-    MAX(CAST(LastCollectTimeStamp AS DATE)) AS Last_Collect_Date
-FROM DBC.StatsV
-WHERE CAST(LastCollectTimeStamp AS DATE) < CURRENT_DATE - {stale_days_threshold}
-GROUP BY 1, 2
-ORDER BY Last_Collect_Date ASC;
+SELECT 
+    src.DatabaseName                                        AS DatabaseName,
+    src.TableName                                           AS TableName,
+    'TABLE LEVEL'                                           AS ObjectName,
+    'Stale Statistics'                                      AS FindingCategory,
+    CAST(src.Last_Collect_Date AS TIMESTAMP(0))             AS LastCollectTimeStamp,
+    'COLLECT STATISTICS ' || TRIM(src.DatabaseName) || '.' || TRIM(src.TableName) || ';' AS RemediationDDL
+FROM (
+    SELECT DISTINCT 
+        DatabaseName, 
+        TableName,
+        MAX(CAST(LastCollectTimeStamp AS DATE)) AS Last_Collect_Date
+    FROM DBC.StatsV
+    WHERE CAST(LastCollectTimeStamp AS DATE) < CURRENT_DATE - {stale_days_threshold}
+    GROUP BY 1, 2
+) src
+ORDER BY src.Last_Collect_Date ASC;

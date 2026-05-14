@@ -35,6 +35,9 @@ from utils.csv_logger import log_execution
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Contrato de severidades — orden estricto de criticidad
+SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+
 
 def inject_custom_css():
     """Inject custom CSS for fonts and icons."""
@@ -103,8 +106,11 @@ def _normalize_to_dataframe(result) -> pd.DataFrame:
 
 
 def display_kpi_cards(analyzed_data: dict):
-    """Display KPI cards for all 10 components."""
+    """Display KPI cards — strictly 4 severity columns in criticality order."""
     st.subheader("KPI Cards - Statistics Management")
+    
+    severity_counts = {sev: 0 for sev in SEVERITY_ORDER}
+    total_findings = 0
     
     component_names = [
         ("Unused Objects", "01_unused_objects"),
@@ -119,19 +125,15 @@ def display_kpi_cards(analyzed_data: dict):
         ("DBC Recommendations", "10_dbc_recommendations")
     ]
     
-    # Calculate severity counts
-    severity_counts = {'CRITICAL': 0, 'HIGH': 0, 'MEDIUM': 0, 'LOW': 0, 'INFO': 0}
-    total_findings = 0
-    
-    for component_name, component_key in component_names:
+    for _, component_key in component_names:
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         if not df.empty and 'Severity' in df.columns:
-            for severity in severity_counts:
+            for severity in SEVERITY_ORDER:
                 severity_counts[severity] += len(df[df['Severity'] == severity])
             total_findings += len(df)
     
-    # Display severity summary
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Contrato AC-01: exactamente 4 columnas (st.columns(4))
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("CRITICAL", severity_counts['CRITICAL'])
     with col2:
@@ -140,12 +142,10 @@ def display_kpi_cards(analyzed_data: dict):
         st.metric("MEDIUM", severity_counts['MEDIUM'])
     with col4:
         st.metric("LOW", severity_counts['LOW'])
-    with col5:
-        st.metric("INFO", severity_counts['INFO'])
     
     st.markdown("---")
     
-    # Display component counts
+    # Component counts
     cols = st.columns(5)
     for i, (component_name, component_key) in enumerate(component_names):
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
@@ -157,10 +157,9 @@ def display_kpi_cards(analyzed_data: dict):
 
 
 def display_findings_table(analyzed_data: dict):
-    """Display findings table with conditional formatting and pagination."""
+    """Display findings table with conditional formatting."""
     st.subheader("Tabla de Hallazgos")
     
-    # Combine all findings into a single DataFrame
     all_findings = []
     
     component_names = {
@@ -197,14 +196,14 @@ def display_findings_table(analyzed_data: dict):
     
     combined_df = pd.concat(all_findings, ignore_index=True)
     
-    # Severity filter
+    # Severity filter — only 4 levels
     severity_filter = st.multiselect(
         "Filtrar por Severidad",
-        options=['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO'],
-        default=['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
+        options=SEVERITY_ORDER,
+        default=SEVERITY_ORDER
     )
     
-    if severity_filter:
+    if severity_filter and 'Severity' in combined_df.columns:
         combined_df = combined_df[combined_df['Severity'].isin(severity_filter)]
     
     # Component filter
@@ -214,10 +213,10 @@ def display_findings_table(analyzed_data: dict):
         default=list(component_names.values())
     )
     
-    if component_filter:
+    if component_filter and 'Component' in combined_df.columns:
         combined_df = combined_df[combined_df['Component'].isin(component_filter)]
     
-    # Display with conditional formatting
+    # Conditional formatting
     def highlight_severity(val):
         if val == 'CRITICAL':
             return 'background-color: #FF6B6B; color: white; font-weight: bold'
@@ -227,11 +226,13 @@ def display_findings_table(analyzed_data: dict):
             return 'background-color: #FFD700; color: black'
         elif val == 'LOW':
             return 'background-color: #90EE90; color: black'
-        else:
-            return 'background-color: #E0E0E0; color: black'
+        return ''
     
-    styled_df = combined_df.style.applymap(highlight_severity, subset=['Severity'])
-    
+    if 'Severity' in combined_df.columns:
+        styled_df = combined_df.style.applymap(highlight_severity, subset=['Severity'])
+    else:
+        styled_df = combined_df.style
+
     st.dataframe(
         styled_df,
         width='stretch',
@@ -249,52 +250,30 @@ def display_findings_table(analyzed_data: dict):
 
 
 def display_ddl_actions(analyzed_data: dict):
-    """Display DDL remediation statements."""
-    st.subheader("Acciones DDL de Remediación")
+    """Display DDL remediation statements from unified RemediationDDL column."""
+    st.subheader("Scripts de Remediación")
     
-    component_names = {
-        "01_unused_objects": "Unused Objects",
-        "02_sample_candidates": "Sample Candidates",
-        "03_missing_partition": "Missing PARTITION",
-        "04_missing_table": "Missing Table Stats",
-        "05_missing_index": "Missing Index Stats",
-        "06_stale_stats": "Stale Statistics",
-        "07_zero_stats": "Zero Statistics",
-        "08_multicolumn": "Multicolumn Issues",
-        "09_skipped_sample": "Skipped/Sample",
-        "10_dbc_recommendations": "DBC Recommendations"
-    }
-    
-    # Group by DDL_Action
-    ddl_actions = {'COLLECT': [], 'DROP': [], 'REFRESH': [], 'RECREATE': [], 'REVIEW': []}
-    
-    for component_key, component_name in component_names.items():
-        df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
-        if not df.empty and 'DDL_Statement' in df.columns and 'DDL_Action' in df.columns:
-            for _, row in df.iterrows():
-                action = row['DDL_Action']
-                statement = row['DDL_Statement']
-                if action in ddl_actions:
-                    ddl_actions[action].append(statement)
-    
-    # Consolidate all DDL into single block
     all_ddl = []
-    for action, statements in ddl_actions.items():
-        all_ddl.extend(statements)
+    
+    for component_key in analyzed_data:
+        df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
+        if not df.empty and 'RemediationDDL' in df.columns:
+            ddl_values = df['RemediationDDL'].dropna().tolist()
+            all_ddl.extend(ddl_values)
     
     if all_ddl:
         combined_ddl = "\n".join(all_ddl)
         
-        # Display single DDL block
         st.code(combined_ddl, language='sql')
         
-        # Download button
         st.download_button(
             label="Descargar Scripts DDL",
             data=combined_ddl,
             file_name=f"stats_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
         )
+    else:
+        st.info("No se generaron scripts de remediación.")
 
 
 def main():
@@ -392,7 +371,7 @@ def main():
     if st.session_state.mod2_analyzed_data:
         findings = st.session_state.mod2_findings
 
-        # Validacion segura independiente del tipo de dato
+        # Validacion segura independiente del tipo de dato (isinstance)
         if isinstance(findings, pd.DataFrame):
             has_findings = not findings.empty
         elif isinstance(findings, (list, dict)):
@@ -403,16 +382,14 @@ def main():
         if has_findings:
             st.markdown("## Resultados del Análisis")
             
-            # Standard tabs: ["Datos Analizados", "Hallazgos", "Scripts de Remediación"]
-            tab1, tab2, tab3 = st.tabs(["Datos Analizados", "Hallazgos", "Scripts de Remediación"])
+            # Contrato AC-02: ESTRICTAMENTE 2 tabs, sin "Datos Analizados"
+            tab1, tab2 = st.tabs(["Hallazgos", "Scripts de Remediación"])
             
             with tab1:
                 display_kpi_cards(st.session_state.mod2_analyzed_data)
-            
-            with tab2:
                 display_findings_table(st.session_state.mod2_analyzed_data)
             
-            with tab3:
+            with tab2:
                 display_ddl_actions(st.session_state.mod2_analyzed_data)
 
 

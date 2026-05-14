@@ -14,18 +14,18 @@
 -- =============================================================================
 
 WITH Tablas_Con_Datos AS (
-    -- Validamos que la tabla tenga espacio físico (datos reales)
     SELECT DatabaseName, TableName
     FROM DBC.TableSizeV
     GROUP BY 1, 2
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    i.DatabaseName, 
-    i.TableName,
-    i.IndexType,
-    i.IndexName,
-    i.IndexNumber
+    i.DatabaseName                                          AS DatabaseName, 
+    i.TableName                                             AS TableName,
+    COALESCE(TRIM(i.IndexName), 'INDEX #' || TRIM(CAST(i.IndexNumber AS VARCHAR(10)))) AS ObjectName,
+    'Missing Index Stats'                                   AS FindingCategory,
+    CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
+    'COLLECT STATISTICS INDEX (' || COALESCE(TRIM(i.IndexName), TRIM(CAST(i.IndexNumber AS VARCHAR(10)))) || ') ON ' || TRIM(i.DatabaseName) || '.' || TRIM(i.TableName) || ';' AS RemediationDDL
 FROM DBC.IndicesV i
 INNER JOIN Tablas_Con_Datos t
     ON i.DatabaseName = t.DatabaseName
@@ -33,16 +33,13 @@ INNER JOIN Tablas_Con_Datos t
 LEFT JOIN DBC.StatsV s 
     ON i.DatabaseName = s.DatabaseName 
     AND i.TableName = s.TableName 
-    AND i.IndexNumber = s.IndexNumber -- Cruce exacto, evita fallos con índices multicolumna
+    AND i.IndexNumber = s.IndexNumber
 WHERE i.IndexType IN ('P', 'S', 'Q', 'J') 
   AND s.IndexNumber IS NULL
   AND i.DatabaseName NOT IN (
         'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT',
         'TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM',
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
-        'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE',
+        'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
 ORDER BY i.DatabaseName, i.TableName, i.IndexType;
-
---sentencia collect statistics
---COLLECT STATISTICS INDEX (IndexName) ON DATABASENAME.TABLENAME;
