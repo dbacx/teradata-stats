@@ -2,10 +2,14 @@
 -- Component 1: Unused Objects - Statistics Collection Without Table Usage
 -- =============================================================================
 -- Description : Identifies tables with recent statistics collection (last 30 days)
---               but no actual usage, suggesting wasted CPU on COLLECT STATS
+--               but no actual usage from DBQL ObjectUsage, suggesting wasted CPU
+--               on COLLECT STATS. Uses DBC.StatsV, DBC.TableSizeV, DBC.TablesV,
+--               and DBC.ObjectUsage to correlate stats collection with actual
+--               table access patterns. Excludes DBC databases and SUMMARY stats.
 -- 
 -- Version     : 1.0.0
 -- Date        : 2025-04-29
+-- Modificado  : 2026-05-13 - Integración y optimización de motor SQL para Módulo 2
 -- Author      : Ricardo Enciso
 -- Environment : Teradata 20 / DBQL ObjectUsage globally enabled
 --

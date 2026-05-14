@@ -1,10 +1,15 @@
 -- =============================================================================
 -- Component   : Zero Statistics
 -- =============================================================================
--- Description : Identifies stats with RowCount=0 on tables that actually contain data
+-- Description : Identifies statistics with RowCount=0 on tables that actually
+--               contain data (physical space > 0). Uses DBC.StatsV and
+--               DBC.TableSizeV to detect critical statistics issues that can cause
+--               Product Join disasters. Excludes SUMMARY stats and system databases.
+--               CRITICAL severity for optimizer accuracy.
 -- 
 -- Version     : 1.0.0
 -- Date        : 2026-04-29
+-- Modificado  : 2026-05-13 - Integración y optimización de motor SQL para Módulo 2
 -- Author      : Ricardo Enciso
 -- Environment : Teradata 20
 -- =============================================================================

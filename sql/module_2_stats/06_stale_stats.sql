@@ -1,10 +1,15 @@
 -- =============================================================================
 -- Component   : Stale Statistics
 -- =============================================================================
--- Description : Identifies statistics with old collection timestamps
+-- Description : Identifies statistics with collection timestamps older than the
+--               configured threshold (placeholder {stale_days_threshold}). Uses
+--               DBC.StatsV to detect stale statistics that need refresh. Critical
+--               for maintaining accurate optimizer statistics. Threshold is injected
+--               dynamically by the Python framework.
 -- 
 -- Version     : 1.0.0
 -- Date        : 2026-04-29
+-- Modificado  : 2026-05-13 - Integración y optimización de motor SQL para Módulo 2
 -- Author      : Ricardo Enciso
 -- Environment : Teradata 20
 -- =============================================================================
