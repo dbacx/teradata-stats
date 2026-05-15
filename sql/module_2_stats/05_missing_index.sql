@@ -20,12 +20,15 @@ WITH Tablas_Con_Datos AS (
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    i.DatabaseName                                          AS DatabaseName, 
-    i.TableName                                             AS TableName,
-    COALESCE(TRIM(i.IndexName), 'INDEX #' || TRIM(CAST(i.IndexNumber AS VARCHAR(10)))) AS ObjectName,
-    'Missing Index Stats'                                   AS FindingCategory,
-    CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
-    'COLLECT STATISTICS INDEX (' || COALESCE(TRIM(i.IndexName), TRIM(CAST(i.IndexNumber AS VARCHAR(10)))) || ') ON ' || TRIM(i.DatabaseName) || '.' || TRIM(i.TableName) || ';' AS RemediationDDL
+    i.DatabaseName, 
+    i.TableName,
+    i.IndexType,
+    i.IndexName,
+    i.IndexNumber,
+    CASE 
+        WHEN i.IndexName IS NOT NULL THEN 'COLLECT STATISTICS INDEX (' || TRIM(i.IndexName) || ') ON ' || TRIM(i.DatabaseName) || '.' || TRIM(i.TableName) || ';'
+        ELSE '-- Índice sin nombre detectado (Se requiere lista de columnas manual)' 
+    END AS Action_SQL
 FROM DBC.IndicesV i
 INNER JOIN Tablas_Con_Datos t
     ON i.DatabaseName = t.DatabaseName

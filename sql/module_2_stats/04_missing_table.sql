@@ -21,12 +21,10 @@ WITH Tablas_Con_Datos AS (
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    o.ObjectDatabaseName                                    AS DatabaseName, 
-    o.ObjectTableName                                       AS TableName,
-    'TABLE LEVEL'                                           AS ObjectName,
-    'Missing Table Stats'                                   AS FindingCategory,
-    CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
-    'COLLECT STATISTICS ' || TRIM(o.ObjectDatabaseName) || '.' || TRIM(o.ObjectTableName) || ';' AS RemediationDDL
+    o.ObjectDatabaseName AS DatabaseName, 
+    o.ObjectTableName AS TableName,
+    t.TableKind,
+    'COLLECT SUMMARY STATISTICS ON ' || TRIM(o.ObjectDatabaseName) || '.' || TRIM(o.ObjectTableName) || ';' AS Action_SQL
 FROM PDCRINFO.DBQLObjTbl_Hst o
 INNER JOIN DBC.TablesV t 
     ON o.ObjectDatabaseName = t.DatabaseName 

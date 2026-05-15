@@ -35,12 +35,19 @@ Uso_Estadisticas AS (
     GROUP BY 1, 2, 3
 )
 SELECT 
-    s.DatabaseName                                          AS DatabaseName,
-    s.TableName                                             AS TableName,
-    TRIM(s.ColumnName)                                      AS ObjectName,
-    'Sample Candidates'                                     AS FindingCategory,
-    s.LastCollectTimeStamp                                   AS LastCollectTimeStamp,
-    'COLLECT STATISTICS USING SAMPLE ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ' COLUMN (' || TRIM(s.ColumnName) || ');' AS RemediationDDL
+    s.DatabaseName, 
+    s.TableName,
+    s.ColumnName,
+    s.RowCount AS Filas_Tabla,
+    s.UniqueValueCount AS Valores_Unicos,
+    CAST((CAST(s.UniqueValueCount AS FLOAT) / NULLIF(s.RowCount, 0)) * 100 AS DECIMAL(5,2)) AS Porcentaje_Unicidad,
+    COALESCE(u.Accesos_PDCR, 0) AS Uso_30_Dias,
+    s.SampleSizePct,
+    s.SampleSignature,
+    CASE 
+        WHEN COALESCE(u.Accesos_PDCR, 0) = 0 THEN 'DROP STATISTICS COLUMN (' || TRIM(s.ColumnName) || ') ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';'
+        ELSE 'COLLECT STATISTICS USING SYSTEM SAMPLE COLUMN (' || TRIM(s.ColumnName) || ') ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';'
+    END AS Action_SQL
 FROM DBC.StatsV s
 INNER JOIN DBC.TablesV t 
     ON s.DatabaseName = t.DatabaseName 
@@ -54,7 +61,7 @@ LEFT JOIN Uso_Estadisticas u
     AND s.ColumnName = u.ObjectColumnName
 WHERE t.TableKind = 'T'
   AND s.StatsId <> 0 
-  AND s.RowCount > 100000
+  AND s.RowCount > 100000 
   AND UPPER(s.ColumnName) <> 'PARTITION'
   AND (CAST(s.UniqueValueCount AS FLOAT) / NULLIF(s.RowCount, 0)) >= 0.95
   AND (s.SampleSignature IS NULL OR UPPER(s.SampleSignature) NOT LIKE 'SDP%')
@@ -64,4 +71,4 @@ WHERE t.TableKind = 'T'
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
-ORDER BY s.RowCount DESC;
+ORDER BY s.RowCount DESC, Porcentaje_Unicidad DESC;

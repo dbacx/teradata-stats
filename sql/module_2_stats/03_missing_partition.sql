@@ -20,12 +20,10 @@ WITH Tablas_Con_Datos AS (
     HAVING SUM(CurrentPerm) > 0 
 )
 SELECT DISTINCT 
-    ic.DatabaseName                                         AS DatabaseName, 
-    ic.TableName                                            AS TableName,
-    'PARTITION'                                             AS ObjectName,
-    'Missing Partition Stats'                               AS FindingCategory,
-    CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
-    'COLLECT STATISTICS COLUMN (PARTITION) ON ' || TRIM(ic.DatabaseName) || '.' || TRIM(ic.TableName) || ';' AS RemediationDDL
+    ic.DatabaseName, 
+    ic.TableName,
+    t.PartitioningLevels,
+    'COLLECT STATISTICS COLUMN PARTITION ON ' || TRIM(ic.DatabaseName) || '.' || TRIM(ic.TableName) || ';' AS Action_SQL
 FROM DBC.IndexConstraints ic
 INNER JOIN DBC.TablesV t 
     ON ic.DatabaseName = t.DatabaseName 

@@ -30,54 +30,40 @@
 --            (not available in any DBC view)
 -- =============================================================================
 
-SELECT
-    src.DatabaseName                                        AS DatabaseName,
-    src.TableName                                           AS TableName,
-    'TABLE LEVEL'                                           AS ObjectName,
-    'Unused Objects'                                        AS FindingCategory,
-    CAST(src.Last_Stat_Collect AS TIMESTAMP(0))             AS LastCollectTimeStamp,
-    'COLLECT STATISTICS ' || TRIM(src.DatabaseName) || '.' || TRIM(src.TableName) || ';' AS RemediationDDL
-FROM (
-    SELECT 
-        s.DatabaseName, 
-        s.TableName,
-        CAST(SUM(t.CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Size_GB,
-        MAX(CAST(s.LastCollectTimeStamp AS DATE))                AS Last_Stat_Collect,
-        MAX(u.LastAccessTimeStamp)                               AS Last_Actual_Access
-
-    FROM DBC.StatsV s
-
-    INNER JOIN (
-        SELECT ts.DatabaseName, ts.TableName, SUM(ts.CurrentPerm) AS CurrentPerm
-        FROM DBC.TableSizeV ts
-        JOIN DBC.TablesV tb 
-            ON ts.DatabaseName = tb.DatabaseName 
-            AND ts.TableName   = tb.TableName
-        WHERE tb.TableKind = 'T'
-        GROUP BY 1, 2
-    ) t ON s.DatabaseName = t.DatabaseName 
-       AND s.TableName    = t.TableName
-
-    LEFT JOIN (
-        SELECT 
-            db.DatabaseName,
-            tv.TVMName          AS ObjectName,
-            ou.LastAccessTimeStamp
-        FROM DBC.ObjectUsage ou
-        JOIN DBC.Dbase db ON ou.DatabaseId = db.DatabaseId
-        JOIN DBC.TVM   tv ON ou.ObjectId   = tv.TVMId
-        WHERE ou.FieldId     IS NULL
-          AND ou.IndexNumber IS NULL
-    ) u ON s.DatabaseName = u.DatabaseName 
-       AND s.TableName    = u.ObjectName
-
-    WHERE CAST(s.LastCollectTimeStamp AS DATE) >= CURRENT_DATE - 30
-      AND s.DatabaseName <> 'DBC'
-      AND s.StatsId <> 0
-
+SELECT 
+    s.DatabaseName, 
+    s.TableName,
+    CAST(SUM(t.CurrentPerm) / (1024.0**3) AS DECIMAL(18,2)) AS Size_GB,
+    MAX(CAST(s.LastCollectTimeStamp AS DATE))                AS Last_Stat_Collect,
+    MAX(u.LastAccessTimeStamp)                               AS Last_Actual_Access,
+    'DROP STATISTICS ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';' AS Action_SQL
+FROM DBC.StatsV s
+INNER JOIN (
+    SELECT ts.DatabaseName, ts.TableName, SUM(ts.CurrentPerm) AS CurrentPerm
+    FROM DBC.TableSizeV ts
+    JOIN DBC.TablesV tb 
+        ON ts.DatabaseName = tb.DatabaseName 
+        AND ts.TableName   = tb.TableName
+    WHERE tb.TableKind = 'T'
     GROUP BY 1, 2
-
-    HAVING (Last_Actual_Access < CURRENT_DATE - 30 OR Last_Actual_Access IS NULL)
-       AND (Last_Stat_Collect  > Last_Actual_Access OR Last_Actual_Access IS NULL)
-) src
-ORDER BY src.Size_GB DESC;
+) t ON s.DatabaseName = t.DatabaseName 
+   AND s.TableName    = t.TableName
+LEFT JOIN (
+    SELECT 
+        db.DatabaseName,
+        tv.TVMName          AS ObjectName,
+        ou.LastAccessTimeStamp
+    FROM DBC.ObjectUsage ou
+    JOIN DBC.Dbase db ON ou.DatabaseId = db.DatabaseId
+    JOIN DBC.TVM   tv ON ou.ObjectId   = tv.TVMId
+    WHERE ou.FieldId     IS NULL
+      AND ou.IndexNumber IS NULL
+) u ON s.DatabaseName = u.DatabaseName 
+   AND s.TableName    = u.ObjectName
+WHERE CAST(s.LastCollectTimeStamp AS DATE) >= CURRENT_DATE - 30
+  AND s.DatabaseName <> 'DBC'
+  AND s.StatsId <> 0
+GROUP BY 1, 2
+HAVING (Last_Actual_Access < CURRENT_DATE - 30 OR Last_Actual_Access IS NULL)
+   AND (Last_Stat_Collect  > Last_Actual_Access OR Last_Actual_Access IS NULL)
+ORDER BY Size_GB DESC;
