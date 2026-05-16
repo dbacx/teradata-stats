@@ -134,7 +134,7 @@ def _get_ddl_values(df: pd.DataFrame) -> list:
 
 
 def display_kpi_cards(analyzed_data: dict):
-    """Display KPI cards — strictly 4 severity columns in criticality order."""
+    """Display KPI cards — strictly 5 severity columns in criticality order."""
     st.subheader("KPI Cards - Statistics Management")
     
     severity_counts = {sev: 0 for sev in SEVERITY_ORDER}
@@ -148,7 +148,7 @@ def display_kpi_cards(analyzed_data: dict):
             total_findings += len(df)
     
     # Contrato AC-01: exactamente 5 columnas (st.columns(5))
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.metric("CRITICAL", severity_counts['CRITICAL'])
     with col2:
