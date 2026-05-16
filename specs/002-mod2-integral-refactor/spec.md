@@ -4,7 +4,7 @@
 El Módulo 2 presenta fallas estructurales: colapsa en tiempo de ejecución al validar estructuras de datos (`AttributeError`), sufre de explosión de columnas al concatenar diferentes queries, renderiza categorías de menor valor (INFO) y no prioriza los hallazgos según el impacto real en el optimizador de Teradata. Se requiere una reestructuración de extremo a extremo.
 
 ## Requisitos Funcionales
-1. RF-01: Refactorizar los 10 archivos `.sql` en `sql/module_2_stats/` para que retornen un esquema de columnas idéntico.
+1. RF-01: Refactorizar los 15 archivos `.sql` en `sql/module_2_stats/` para que retornen un esquema de columnas idéntico.
 2. RF-02: Modificar el Analyzer y la UI para que iteren de forma segura sobre diccionarios (`Dict[str, pd.DataFrame]`), eliminando el uso de `.empty` sobre estructuras que no son DataFrames.
 3. RF-03: Eliminar por completo el cálculo y renderizado de la severidad "INFO".
 4. RF-04: Eliminar la pestaña "Datos Analizados" de la interfaz.
@@ -13,26 +13,31 @@ El Módulo 2 presenta fallas estructurales: colapsa en tiempo de ejecución al v
 ## Contratos Estrictos
 
 ### Contrato 1: Datos SQL (Esquema Obligatorio)
-Los 10 queries SQL DEBEN retornar estrictamente este DDL de salida (en este orden y con estos alias). Si el query no tiene el dato, usar `CAST(NULL AS [TIPO])` o strings estáticos:
+Los 15 queries SQL DEBEN retornar estrictamente este DDL de salida (en este orden y con estos alias). Si el query no tiene el dato, usar `CAST(NULL AS [TIPO])` o strings estáticos:
 1. `DatabaseName` (VARCHAR)
 2. `TableName` (VARCHAR)
 3. `ColumnName` (VARCHAR)
 4. `FindingCategory` (VARCHAR) -> Nombre de la regla.
 5. `LastCollectTimeStamp` (TIMESTAMP)
-6. `RemediationDDL` (VARCHAR)
+6. `Action_SQL` (VARCHAR)
 
 ### Contrato 2: Presentación (Orden Obligatorio)
 Tanto las tarjetas de KPI como la iteración de tablas en la UI DEBEN seguir este orden exacto:
-1. 'Missing Index Stats'
-2. 'Missing Table Stats'
-3. 'Missing PARTITION'
-4. 'Zero Statistics'
-5. 'Stale Statistics'
-6. 'Multicolumn Issues'
-7. 'Sample Candidates'
-8. 'Skipped/Sample'
-9. 'Unused Objects'
-10. 'DBC Recommendations'
+1. 'Missing Table Stats'
+2. 'Zero Statistics'
+3. 'Sampled Skew'
+4. 'Stale by volume'
+5. 'Missing PARTITION'
+6. 'Missing INDEX'
+7. 'DBC Recommendations'
+8. 'Missing MLPPI Level'
+9. 'Sample Candidates'
+10. 'Multicolumn Stats'
+11. 'Skipped Sample'
+12. 'Stats_Collection_Overhead'
+13. 'Unused Objects'
+14. 'Stale Stats'
+15. 'TDstats Status'
 
 ## Criterios de Aceptación
 
@@ -44,7 +49,7 @@ Tanto las tarjetas de KPI como la iteración de tablas en la UI DEBEN seguir est
 ### AC-02: Limpieza de Tabs y Severidad
 - **Given** el renderizado de la interfaz.
 - **When** se construyen los componentes visuales.
-- **Then** solo existen las pestañas `["Hallazgos", "Scripts de Remediación"]` y las tarjetas de KPI se limitan a 4 columnas: CRITICAL, HIGH, MEDIUM, LOW.
+- **Then** solo existen las pestañas `["Hallazgos", "Scripts de Remediación"]` y las tarjetas de KPI se limitan a 5 columnas: CRITICAL, HIGH, MEDIUM, LOW, INFO.
 
 ### AC-03: Iteración por Prioridad
 - **Given** el diccionario de resultados.
