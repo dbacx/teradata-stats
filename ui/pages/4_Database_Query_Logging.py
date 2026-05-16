@@ -460,26 +460,6 @@ def main():
     inject_custom_css()
     initialize_session_state()
     
-    # Corporate CSS for button styling
-    st.markdown(
-        """
-        <style>
-        /* Estilo corporativo para el boton de ejecucion */
-        div.stButton > button:first-child {
-            background-color: #FD6724 !important;
-            color: white !important;
-            font-weight: bold !important;
-            border-color: #FD6724 !important;
-        }
-        div.stButton > button:first-child:hover {
-            background-color: #e55a1d !important;
-            border-color: #e55a1d !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
     st.title("Database Query Logging")
     st.markdown("*Evaluación y Optimización de Configuración de Logging en Teradata*")
     st.markdown("---")
@@ -494,7 +474,7 @@ def main():
     )
     
     # Execute Analysis Button
-    if st.button("Ejecutar Analisis", type="primary"):
+    if st.sidebar.button("Ejecutar Analisis", type="primary"):
         try:
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):

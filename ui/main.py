@@ -83,6 +83,17 @@ offline_icons_css = """
         visibility: visible !important;
         display: block !important;
     }
+
+    /* Estilo corporativo global para botones primarios (Teradata Orange) */
+    [data-testid="baseButton-primary"] {
+        background-color: #FD6724 !important;
+        color: white !important;
+        border-color: #FD6724 !important;
+    }
+    [data-testid="baseButton-primary"]:hover {
+        background-color: #e55a1d !important;
+        border-color: #e55a1d !important;
+    }
 </style>
 """
 st.markdown(offline_icons_css, unsafe_allow_html=True)
