@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ConfigAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Config Assessment Module (Module 5).
+    Analyzer for Config Assessment Module (Module 4).
     
     Analyzes data from 4 components to identify configuration issues:
     1. ResUsage Rules - Validates ResUsage collection intervals

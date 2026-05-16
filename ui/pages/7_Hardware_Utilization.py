@@ -16,8 +16,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod8_hardware_collector import HardwareCollector
-from analyzers.mod8_hardware_analyzer import HardwareAnalyzer
+from collectors.mod7_hardware_collector import HardwareCollector
+from analyzers.mod7_hardware_analyzer import HardwareAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SecurityAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Security Assessment Module (Module 6).
+    Analyzer for Security Assessment Module (Module 10).
     
     Analyzes data from 5 components to identify security issues:
     1. Password Expiry - Users with expired passwords

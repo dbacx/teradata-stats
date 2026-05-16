@@ -17,8 +17,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod3_performance_collector import PerformanceCollector
-from analyzers.mod3_performance_analyzer import PerformanceAnalyzer
+from collectors.mod5_performance_collector import PerformanceCollector
+from analyzers.mod5_performance_analyzer import PerformanceAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging

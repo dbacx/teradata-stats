@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class MonthlyReportAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Monthly Report Module (Module 10).
+    Analyzer for Monthly Report Module (Module 9).
     
     Analyzes data from 69 monthly report queries and formats them for presentation.
     These are predefined monthly reports that don't require complex rule-based analysis.

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 class MonthlyReportCollector(BaseCollector):
     """
-    Collector for Monthly Report Module (Module 10).
+    Collector for Monthly Report Module (Module 9).
     
     Executes 69 SQL queries for monthly reporting with dynamic date parameterization.
     Supports single report execution and batch execution for all reports.
@@ -38,8 +38,8 @@ class MonthlyReportCollector(BaseCollector):
     
     def __init__(self):
         """Initialize the Monthly Report Collector."""
-        super().__init__(module_name='module_10_monthly_report')
-        self.sql_dir = Path("sql/module_10_monthly_report")
+        super().__init__(module_name='module_9_monthly_report')
+        self.sql_dir = Path("sql/module_9_monthly_report")
         self.sql_files = sorted(self.sql_dir.glob("*.sql"))
         logger.info(f"Initialized MonthlyReportCollector with {len(self.sql_files)} SQL files")
     

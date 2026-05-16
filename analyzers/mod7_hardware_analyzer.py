@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class HardwareAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Hardware Utilization Module (Module 8).
+    Analyzer for Hardware Utilization Module (Module 7).
     
     Analyzes data from 2 components to identify hardware issues:
     1. AMP Space Skew - Space distribution imbalance across AMPs

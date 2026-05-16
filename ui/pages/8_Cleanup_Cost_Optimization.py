@@ -16,8 +16,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod9_cleanup_collector import CleanupCollector
-from analyzers.mod9_cleanup_analyzer import CleanupAnalyzer
+from collectors.mod8_cleanup_collector import CleanupCollector
+from analyzers.mod8_cleanup_analyzer import CleanupAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

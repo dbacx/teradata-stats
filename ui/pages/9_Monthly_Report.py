@@ -26,8 +26,8 @@ if project_root not in sys.path:
 
 # Ahora sí, importaciones locales
 from core.connection import TeradataConnection
-from collectors.mod10_monthly_collector import MonthlyReportCollector
-from analyzers.mod10_monthly_analyzer import MonthlyReportAnalyzer
+from collectors.mod9_monthly_collector import MonthlyReportCollector
+from analyzers.mod9_monthly_analyzer import MonthlyReportAnalyzer
 from utils.csv_logger import log_execution
 
 # Configure logging

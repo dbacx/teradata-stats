@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SpaceAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Space Assessment Module (Module 4).
+    Analyzer for Space Assessment Module (Module 3).
     
     Analyzes data from 5 components to identify space issues:
     1. Database Space Utilization - Databases with high space usage

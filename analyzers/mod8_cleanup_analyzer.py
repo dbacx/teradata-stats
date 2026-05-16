@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class CleanupAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Cleanup & Cost Optimization Module (Module 9).
+    Analyzer for Cleanup & Cost Optimization Module (Module 8).
     
     Analyzes data from 2 components to identify cleanup opportunities:
     1. Empty Tables - Tables not consuming space

@@ -1,8 +1,8 @@
 """
-Module 3 Performance Collector
+Module 5 Config Collector
 
-Collects performance data from Teradata system tables for the
-Performance & DDL Assessment module.
+Collects configuration and logging data from Teradata system tables for the
+Data Collection & Logging Config module.
 """
 
 import logging
@@ -15,31 +15,31 @@ from core.config import SYSTEM_DATABASES
 logger = logging.getLogger(__name__)
 
 
-class PerformanceCollector(BaseCollector):
+class ConfigCollector(BaseCollector):
     """
-    Collector for Performance Assessment Module (Module 3).
+    Collector for Config Assessment Module (Module 4).
     
     Collects data from 4 components:
-    1. Full Table Scans - Tables with high I/O usage
-    2. Highly Skewed Queries - Queries with high CPU skew
-    3. Spool Usage Alerts - Queries with spool issues
-    4. Unused Indexes - Secondary indexes on large tables for review
+    1. ResUsage Rules - Validates ResUsage collection intervals
+    2. DBQL Rules - Lists active DBQL logging rules
+    3. DBQL Thresholds - Checks if thresholds are configured
+    4. DBQL Tables Health - Checks health and size of DBQL logging tables
     """
     
     def __init__(self):
-        """Initialize the Performance Collector."""
-        super().__init__(module_name='module_3_performance')
+        """Initialize the Config Collector."""
+        super().__init__(module_name='module_4_dbql')
         self.sql_files = [
-            '01_full_table_scans.sql',
-            '02_highly_skewed_queries.sql',
-            '03_spool_usage_alerts.sql',
-            '04_unused_indexes.sql'
+            '01_resusage_rules.sql',
+            '02_dbql_rules.sql',
+            '03_dbql_thresholds.sql',
+            '04_dbql_tables_health.sql'
         ]
-        logger.info("Initialized PerformanceCollector")
+        logger.info("Initialized ConfigCollector")
     
     def collect(self, connection, params: Optional[Dict[str, Any]] = None) -> Dict[str, pd.DataFrame]:
         """
-        Collect performance data from Teradata.
+        Collect configuration data from Teradata.
         
         Args:
             connection: Database connection object
@@ -63,16 +63,16 @@ class PerformanceCollector(BaseCollector):
                 # Extract component name from filename
                 component_name = sql_file.replace('.sql', '')
                 
-                # Special handling for PDCRINFO views which may not be available
-                if component_name in ['01_full_table_scans', '02_highly_skewed_queries', '03_spool_usage_alerts']:
+                # Special handling for ResUsageRules which may not be available
+                if component_name == '01_resusage_rules':
                     try:
                         df = self._collect_with_fallback(connection, sql_file, params)
                         results[component_name] = df
                         logger.info(f"Collected {len(df)} rows for {component_name}")
                     except Exception as e:
-                        logger.warning(f"PDCRINFO view not available or permission denied for {component_name}: {str(e)}")
+                        logger.warning(f"ResUsageRules view not available or permission denied: {str(e)}")
                         # Return empty DataFrame with expected columns
-                        results[component_name] = self._get_empty_dataframe_for_component(component_name)
+                        results[component_name] = pd.DataFrame(columns=['RuleName', 'RuleValue', 'RuleType'])
                         logger.info(f"Using fallback empty DataFrame for {component_name}")
                 else:
                     # Read SQL file
@@ -91,13 +91,13 @@ class PerformanceCollector(BaseCollector):
                 logger.error(f"Failed to collect data for {sql_file}: {str(e)}")
                 # Return empty DataFrame for failed component
                 component_name = sql_file.replace('.sql', '')
-                results[component_name] = self._get_empty_dataframe_for_component(component_name)
+                results[component_name] = pd.DataFrame()
         
         return results
     
     def _collect_with_fallback(self, connection, sql_file: str, params: Dict[str, Any]) -> pd.DataFrame:
         """
-        Collect data with fallback for PDCRINFO views that may not be available.
+        Collect data with fallback for views that may not be available.
         
         Args:
             connection: Database connection object
@@ -121,33 +121,13 @@ class PerformanceCollector(BaseCollector):
         
         return df
     
-    def _get_empty_dataframe_for_component(self, component_name: str) -> pd.DataFrame:
-        """
-        Return an empty DataFrame with expected columns for a component.
-        
-        Args:
-            component_name: Name of the component
-        
-        Returns:
-            Empty DataFrame with appropriate columns
-        """
-        column_mapping = {
-            '01_full_table_scans': ['DatabaseName', 'TableName', 'TableKind', 'Size_GB', 'PeakSize_GB'],
-            '02_highly_skewed_queries': ['DatabaseName', 'TableName', 'TableKind', 'Size_GB', 'PeakSize_GB', 'Recommendation'],
-            '03_spool_usage_alerts': ['DatabaseName', 'TableName', 'TableKind', 'Size_GB', 'PeakSize_GB', 'Recommendation'],
-            '04_unused_indexes': ['DatabaseName', 'TableName', 'IndexName', 'IndexType', 'IndexNumber', 'UniqueFlag', 'TableSize_GB', 'ColumnNames']
-        }
-        
-        columns = column_mapping.get(component_name, [])
-        return pd.DataFrame(columns=columns)
-    
     def collect_single(self, connection, component_name: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         Collect data for a single component.
         
         Args:
             connection: Database connection object
-            component_name: Name of the component (e.g., '01_full_table_scans')
+            component_name: Name of the component (e.g., '01_resusage_rules')
             params: Optional dictionary with parameters
         
         Returns:
@@ -164,15 +144,15 @@ class PerformanceCollector(BaseCollector):
         sql_file = f"{component_name}.sql"
         
         try:
-            # Special handling for PDCRINFO views
-            if component_name in ['01_full_table_scans', '02_highly_skewed_queries', '03_spool_usage_alerts']:
+            # Special handling for ResUsageRules
+            if component_name == '01_resusage_rules':
                 try:
                     df = self._collect_with_fallback(connection, sql_file, params)
                     logger.info(f"Collected {len(df)} rows for {component_name}")
                     return df
                 except Exception as e:
-                    logger.warning(f"PDCRINFO view not available for {component_name}: {str(e)}")
-                    return self._get_empty_dataframe_for_component(component_name)
+                    logger.warning(f"ResUsageRules view not available: {str(e)}")
+                    return pd.DataFrame(columns=['RuleName', 'RuleValue', 'RuleType'])
             else:
                 # Read SQL file
                 sql = self.read_sql_file(sql_file)
@@ -188,4 +168,4 @@ class PerformanceCollector(BaseCollector):
             
         except Exception as e:
             logger.error(f"Failed to collect data for {component_name}: {str(e)}")
-            return self._get_empty_dataframe_for_component(component_name)
+            return pd.DataFrame()

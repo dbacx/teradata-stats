@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class PerformanceAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Performance Assessment Module (Module 3).
+    Analyzer for Performance Assessment Module (Module 5).
     
     Analyzes data from 4 components to identify performance issues:
     1. Full Table Scans - Tables with high I/O usage

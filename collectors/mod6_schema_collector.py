@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SchemaCollector(BaseCollector):
     """
-    Collector for Schema Design Module (Module 7).
+    Collector for Schema Design Module (Module 6).
     
     Collects data from 3 components:
     1. Fallback Tables - Tables with Fallback protection enabled
@@ -27,7 +27,7 @@ class SchemaCollector(BaseCollector):
     
     def __init__(self):
         """Initialize the Schema Collector."""
-        super().__init__(module_name='module_7_schema')
+        super().__init__(module_name='module_6_schema')
         self.sql_files = [
             '01_fallback_tables.sql',
             '02_nopi_tables.sql',

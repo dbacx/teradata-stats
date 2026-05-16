@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class SpaceCollector(BaseCollector):
     """
-    Collector for Space Assessment Module (Module 4).
+    Collector for Space Assessment Module (Module 3).
     
     Executes 5 SQL queries to analyze space usage across the Teradata system:
     1. Database Space Utilization
@@ -28,7 +28,7 @@ class SpaceCollector(BaseCollector):
     
     def __init__(self):
         """Initialize the Space Collector."""
-        super().__init__(module_name='module_4_space')
+        super().__init__(module_name='module_3_space')
         self.sql_files = [
             '01_db_space_utilization.sql',
             '02_unused_tables_space.sql',
