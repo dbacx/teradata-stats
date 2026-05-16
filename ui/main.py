@@ -12,50 +12,42 @@ import os
 import argparse
 from dotenv import load_dotenv
 
-# --- CONFIGURACIÓN DINÁMICA DE ENTORNO (MÚLTIPLES CLIENTES) ---
-# 1. Capturar argumentos de la línea de comandos
-parser = argparse.ArgumentParser(description="Teradata Stats Optimizer")
-parser.add_argument(
-    "--client", 
-    type=str, 
-    default="EPM",  # Cliente por defecto si no se especifica en consola
-    help="Nombre del cliente para cargar credenciales (ej: EPM, BCI)"
-)
 
-# parse_known_args evita que Streamlit colapse con sus comandos internos
-args, _ = parser.parse_known_args()
+# ---------------------------------------------------------------------------
+# Cached helpers (executed once per process, not on every rerun)
+# ---------------------------------------------------------------------------
 
-# 2. Add parent directory to path for imports
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(project_root)
+@st.cache_resource
+def load_client_environment():
+    """Parse CLI args, configure sys.path, and load the client .env file.
 
-# 3. Construir la ruta al archivo .env y cargar
-env_file = os.path.join(project_root, f"{args.client.upper()}.env")
+    Returns the client name (e.g. "EPM") on success, or None if the
+    credentials file is missing.
+    """
+    parser = argparse.ArgumentParser(description="Teradata Stats Optimizer")
+    parser.add_argument(
+        "--client",
+        type=str,
+        default="EPM",
+        help="Nombre del cliente para cargar credenciales (ej: EPM, BCI)",
+    )
+    args, _ = parser.parse_known_args()
 
-if os.path.exists(env_file):
-    # override=True fuerza a que las variables se actualicen si cambias de cliente
-    load_dotenv(env_file, override=True)
-else:
-    # Mostramos el error en la UI de Streamlit en lugar de colapsar la terminal
-    st.error(f"🚨 **Error Crítico de Configuración:** No se encontró el archivo de credenciales `{args.client.upper()}.env` en la raíz del proyecto.")
-    st.stop()
-# -------------------------------------------------------------
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
 
-# Blindaje contra dataframes masivos en Streamlit
-pd.set_option("styler.render.max_elements", 2000000)
+    env_file = os.path.join(project_root, f"{args.client.upper()}.env")
+    if os.path.exists(env_file):
+        load_dotenv(env_file, override=True)
+        return args.client.upper()
+    return None
 
-# Streamlit page configuration
-st.set_page_config(
-    page_title=f"TD Stats Optimizer - {args.client.upper()}", # Añadimos el cliente al título
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
-# Add logo to sidebar using native st.logo
-st.logo("logo.jpg")
-
-# Inject CSS for offline/firewall-proof icon fallback
-offline_icons_css = """
+@st.cache_resource
+def get_global_css():
+    """Return the global CSS string (offline icon fallback + corporate buttons)."""
+    return """
 <style>
     /* 1. Ocultar el texto crudo de los iconos rotos */
     .material-symbols-rounded, 
@@ -96,7 +88,38 @@ offline_icons_css = """
     }
 </style>
 """
-st.markdown(offline_icons_css, unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap sequence
+# ---------------------------------------------------------------------------
+
+# 1. Pandas config (pure Python, no Streamlit rendering)
+pd.set_option("styler.render.max_elements", 2000000)
+
+# 2. Load client environment (cached — runs once per process)
+client = load_client_environment()
+
+# 3. FIRST Streamlit rendering command
+st.set_page_config(
+    page_title=f"TD Stats Optimizer - {client or 'UNKNOWN'}",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# 4. Validate environment loaded successfully
+if client is None:
+    st.error(
+        "**Error Critico de Configuracion:** No se encontro el archivo de "
+        "credenciales `.env` en la raiz del proyecto."
+    )
+    st.stop()
+
+# 5. Sidebar logo
+st.logo("logo.jpg")
+
+# 6. Inject cached global CSS
+st.markdown(get_global_css(), unsafe_allow_html=True)
 
 # Define pages in the desired order
 # Home first, then Health & Connectivity, then other modules
