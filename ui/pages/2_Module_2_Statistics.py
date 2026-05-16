@@ -42,19 +42,19 @@ SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
 COMPONENT_RENDER_ORDER = [
     ("Zero Statistics",        "07_statistics_zero_stats"),         # CRITICAL
     ("Missing PARTITION",      "03_statistics_missing_partition"),  # HIGH
-    ("Missing Table Stats",    "04_statistics_missing_table"),      # HIGH
+    ("Missing Table Stats",    "04_statistics_missing_table"),      # CRITICAL
     ("MLPPI Missing Levels",   "11_statistics_mlppi_missing_levels"), # HIGH
-    ("Sampled Skew",           "13_statistics_sampled_skew"),       # HIGH
-    ("Stale by Volume",        "14_statistics_stale_by_volume"),    # HIGH
-    ("Unused Objects",         "01_statistics_unused_objects"),      # MEDIUM
-    ("Missing Index Stats",    "05_statistics_missing_index"),      # MEDIUM
-    ("Stale Statistics",       "06_statistics_stale_stats"),        # MEDIUM
+    ("Sampled Skew",           "13_statistics_sampled_skew"),       # CRITICAL
+    ("Stale by Volume",        "14_statistics_stale_by_volume"),    # CRITICAL
+    ("Unused Objects",         "01_statistics_unused_objects"),      # LOW
+    ("Missing Index Stats",    "05_statistics_missing_index"),      # CRITICAL
+    ("Stale Statistics",       "06_statistics_stale_stats"),        # LOW
     ("Multicolumn Issues",     "08_statistics_multicolumn"),        # MEDIUM
-    ("DBC Recommendations",    "10_statistics_dbc_recommendations"),# MEDIUM
+    ("DBC Recommendations",    "10_statistics_dbc_recommendations"),# HIGH
     ("Statistics Bloat",       "12_statistics_bloat"),              # MEDIUM
-    ("TDStats Recommendations","15_tdstats_recommendations"),       # MEDIUM
-    ("Sample Candidates",      "02_statistics_sample_candidates"),  # LOW
-    ("Skipped/Sample",         "09_statistics_skipped_sample"),     # LOW
+    ("TDStats Recommendations","15_tdstats_recommendations"),       # INFO
+    ("Sample Candidates",      "02_statistics_sample_candidates"),  # MEDIUM
+    ("Skipped/Sample",         "09_statistics_skipped_sample"),     # MEDIUM
 ]
 
 
