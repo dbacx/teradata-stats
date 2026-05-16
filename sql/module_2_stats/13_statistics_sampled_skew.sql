@@ -17,25 +17,6 @@
 -- Environment : Teradata 20
 -- =============================================================================
 
--- =============================================================================
--- Component 13: Sampled Skew (Anti-Patrón de Muestreo)
--- =============================================================================
--- Description : Identifies low-cardinality/skewed columns (UniqueValueCount < 100)
---               that are incorrectly using sampled statistics (SampleSizePct > 0).
---               According to Teradata best practices, skewed columns must be 
---               collected at 100% to avoid inaccurate histograms and poor optimizer 
---               plans. Uses DBC.StatsV and DBC.TableSizeV. Generates a 'USING NO 
---               SAMPLE' command to override dictionary memory and force a full scan.
---               Excludes system databases.
--- 
--- Version     : 1.0.0
--- Date        : 2026-05-15
--- Modificado  : 2026-05-15 - Creación de validación avanzada para corregir sesgo
---               y ajuste de sentencia a USING NO SAMPLE.
--- Author      : Ricardo Enciso
--- Environment : Teradata 20
--- =============================================================================
-
 WITH Tablas_Con_Datos AS (
     SELECT DatabaseName, TableName
     FROM DBC.TableSizeV
