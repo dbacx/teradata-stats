@@ -30,33 +30,43 @@ class StatsCollector(BaseCollector):
     """
     Collector for Statistics Management Module (Module 2).
     
-    Executes 10 SQL queries to identify statistics issues across the Teradata system:
-    1. Unused Objects
-    2. Sample Candidates
-    3. Missing at PARTITION level
-    4. Missing at Table Level
-    5. Missing at Index Level
-    6. Stale Stats
-    7. Zero Stats
-    8. Multicolumn
-    9. Skipped and Sample
+    Executes 15 SQL queries to identify statistics issues across the Teradata system:
+    1.  Unused Objects
+    2.  Sample Candidates
+    3.  Missing at PARTITION level
+    4.  Missing at Table Level
+    5.  Missing at Index Level
+    6.  Stale Stats
+    7.  Zero Stats
+    8.  Multicolumn
+    9.  Skipped and Sample
     10. DBC Recommendations
+    11. MLPPI Missing Levels
+    12. Statistics Bloat
+    13. Sampled Skew
+    14. Stale by Volume
+    15. TDStats Recommendations
     """
     
     def __init__(self):
         """Initialize the Stats Collector."""
         super().__init__(module_name='module_2_stats')
         self.sql_files = [
-            '01_unused_objects.sql',
-            '02_sample_candidates.sql',
-            '03_missing_partition.sql',
-            '04_missing_table.sql',
-            '05_missing_index.sql',
-            '06_stale_stats.sql',
-            '07_zero_stats.sql',
-            '08_multicolumn.sql',
-            '09_skipped_sample.sql',
-            '10_dbc_recommendations.sql'
+            '01_statistics_unused_objects.sql',
+            '02_statistics_sample_candidates.sql',
+            '03_statistics_missing_partition.sql',
+            '04_statistics_missing_table.sql',
+            '05_statistics_missing_index.sql',
+            '06_statistics_stale_stats.sql',
+            '07_statistics_zero_stats.sql',
+            '08_statistics_multicolumn.sql',
+            '09_statistics_skipped_sample.sql',
+            '10_statistics_dbc_recommendations.sql',
+            '11_statistics_mlppi_missing_levels.sql',
+            '12_statistics_bloat.sql',
+            '13_statistics_sampled_skew.sql',
+            '14_statistics_stale_by_volume.sql',
+            '15_tdstats_recommendations.sql',
         ]
         logger.info(f"Initialized StatsCollector with {len(self.sql_files)} SQL files")
     

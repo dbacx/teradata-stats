@@ -27,7 +27,7 @@ if project_root not in sys.path:
 # Ahora sí, importaciones locales
 from core.connection import TeradataConnection
 from collectors.mod2_stats_collector import StatsCollector
-from analyzers.mod2_stats_analyzer import StatsAnalyzer
+from analyzers.mod2_stats_analyzer import StatsAnalyzer, COMPONENT_LABELS, DDL_COLUMNS
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 from utils.csv_logger import log_execution
 
@@ -37,6 +37,25 @@ logger = logging.getLogger(__name__)
 
 # Contrato de severidades — orden estricto de criticidad
 SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+
+# Orden de renderizado de las 15 categorías (criticidad descendente)
+COMPONENT_RENDER_ORDER = [
+    ("Zero Statistics",        "07_statistics_zero_stats"),         # CRITICAL
+    ("Missing PARTITION",      "03_statistics_missing_partition"),  # HIGH
+    ("Missing Table Stats",    "04_statistics_missing_table"),      # HIGH
+    ("MLPPI Missing Levels",   "11_statistics_mlppi_missing_levels"), # HIGH
+    ("Sampled Skew",           "13_statistics_sampled_skew"),       # HIGH
+    ("Stale by Volume",        "14_statistics_stale_by_volume"),    # HIGH
+    ("Unused Objects",         "01_statistics_unused_objects"),      # MEDIUM
+    ("Missing Index Stats",    "05_statistics_missing_index"),      # MEDIUM
+    ("Stale Statistics",       "06_statistics_stale_stats"),        # MEDIUM
+    ("Multicolumn Issues",     "08_statistics_multicolumn"),        # MEDIUM
+    ("DBC Recommendations",    "10_statistics_dbc_recommendations"),# MEDIUM
+    ("Statistics Bloat",       "12_statistics_bloat"),              # MEDIUM
+    ("TDStats Recommendations","15_tdstats_recommendations"),       # MEDIUM
+    ("Sample Candidates",      "02_statistics_sample_candidates"),  # LOW
+    ("Skipped/Sample",         "09_statistics_skipped_sample"),     # LOW
+]
 
 
 def inject_custom_css():
@@ -105,6 +124,14 @@ def _normalize_to_dataframe(result) -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def _get_ddl_values(df: pd.DataFrame) -> list:
+    """Extract DDL values from a DataFrame, checking both RemediationDDL and Action_SQL."""
+    for col in DDL_COLUMNS:
+        if col in df.columns:
+            return df[col].dropna().tolist()
+    return []
+
+
 def display_kpi_cards(analyzed_data: dict):
     """Display KPI cards — strictly 4 severity columns in criticality order."""
     st.subheader("KPI Cards - Statistics Management")
@@ -112,20 +139,7 @@ def display_kpi_cards(analyzed_data: dict):
     severity_counts = {sev: 0 for sev in SEVERITY_ORDER}
     total_findings = 0
     
-    component_names = [
-        ("Unused Objects", "01_unused_objects"),
-        ("Sample Candidates", "02_sample_candidates"),
-        ("Missing PARTITION", "03_missing_partition"),
-        ("Missing Table Stats", "04_missing_table"),
-        ("Missing Index Stats", "05_missing_index"),
-        ("Stale Statistics", "06_stale_stats"),
-        ("Zero Statistics", "07_zero_stats"),
-        ("Multicolumn Issues", "08_multicolumn"),
-        ("Skipped/Sample", "09_skipped_sample"),
-        ("DBC Recommendations", "10_dbc_recommendations")
-    ]
-    
-    for _, component_key in component_names:
+    for _, component_key in COMPONENT_RENDER_ORDER:
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         if not df.empty and 'Severity' in df.columns:
             for severity in SEVERITY_ORDER:
@@ -145,9 +159,9 @@ def display_kpi_cards(analyzed_data: dict):
     
     st.markdown("---")
     
-    # Component counts
+    # Component counts — 15 categories in 5-column grid
     cols = st.columns(5)
-    for i, (component_name, component_key) in enumerate(component_names):
+    for i, (component_name, component_key) in enumerate(COMPONENT_RENDER_ORDER):
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         count = len(df)
         with cols[i % 5]:
@@ -162,20 +176,7 @@ def display_findings_table(analyzed_data: dict):
     
     all_findings = []
     
-    component_names = {
-        "01_unused_objects": "Unused Objects",
-        "02_sample_candidates": "Sample Candidates",
-        "03_missing_partition": "Missing PARTITION",
-        "04_missing_table": "Missing Table Stats",
-        "05_missing_index": "Missing Index Stats",
-        "06_stale_stats": "Stale Statistics",
-        "07_zero_stats": "Zero Statistics",
-        "08_multicolumn": "Multicolumn Issues",
-        "09_skipped_sample": "Skipped/Sample",
-        "10_dbc_recommendations": "DBC Recommendations"
-    }
-    
-    for component_key, component_name in component_names.items():
+    for component_name, component_key in COMPONENT_RENDER_ORDER:
         result = analyzed_data.get(component_key, pd.DataFrame())
         if isinstance(result, dict):
             for query_name, df_result in result.items():
@@ -207,10 +208,11 @@ def display_findings_table(analyzed_data: dict):
         combined_df = combined_df[combined_df['Severity'].isin(severity_filter)]
     
     # Component filter
+    component_labels = [name for name, _ in COMPONENT_RENDER_ORDER]
     component_filter = st.multiselect(
         "Filtrar por Componente",
-        options=list(component_names.values()),
-        default=list(component_names.values())
+        options=component_labels,
+        default=component_labels
     )
     
     if component_filter and 'Component' in combined_df.columns:
@@ -250,24 +252,32 @@ def display_findings_table(analyzed_data: dict):
 
 
 def display_ddl_actions(analyzed_data: dict):
-    """Display DDL remediation statements from unified RemediationDDL column."""
+    """Display DDL remediation scripts grouped by component using st.code blocks."""
     st.subheader("Scripts de Remediación")
     
-    all_ddl = []
+    has_any_ddl = False
+    all_ddl_lines = []
     
-    for component_key in analyzed_data:
+    for component_name, component_key in COMPONENT_RENDER_ORDER:
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
-        if not df.empty and 'RemediationDDL' in df.columns:
-            ddl_values = df['RemediationDDL'].dropna().tolist()
-            all_ddl.extend(ddl_values)
+        if df.empty:
+            continue
+        
+        ddl_values = _get_ddl_values(df)
+        if not ddl_values:
+            continue
+        
+        has_any_ddl = True
+        st.markdown(f"#### {component_name}")
+        component_ddl = "\n".join(ddl_values)
+        st.code(component_ddl, language="sql")
+        all_ddl_lines.extend(ddl_values)
     
-    if all_ddl:
-        combined_ddl = "\n".join(all_ddl)
-        
-        st.code(combined_ddl, language='sql')
-        
+    if has_any_ddl:
+        st.markdown("---")
+        combined_ddl = "\n".join(all_ddl_lines)
         st.download_button(
-            label="Descargar Scripts DDL",
+            label="Descargar Todos los Scripts DDL",
             data=combined_ddl,
             file_name=f"stats_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"

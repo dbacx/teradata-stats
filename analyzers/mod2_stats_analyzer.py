@@ -2,8 +2,8 @@
 Module 2 Statistics Analyzer
 
 Analyzes collected statistics data and generates findings with severity levels.
-Works with the unified 6-column SQL schema:
-  DatabaseName, TableName, ObjectName, FindingCategory, LastCollectTimeStamp, RemediationDDL
+Handles varying column schemas from 15 SQL queries. Identifies DDL remediation
+columns (Action_SQL or RemediationDDL) dynamically.
 """
 
 import logging
@@ -17,39 +17,71 @@ from core.config import THRESHOLDS
 # ---------------------------------------------------------
 # BULLETPROOF PATH ROUTING
 # ---------------------------------------------------------
-# Sube exactamente 1 nivel desde analyzers/ hasta teradata-stats/
 current_file_path = Path(__file__).resolve()
 project_root = str(current_file_path.parent.parent)
 
 if project_root not in sys.path:
-    sys.path.insert(0, project_root)  # insert(0) fuerza a Python a buscar aquí primero
+    sys.path.insert(0, project_root)
 
 logger = logging.getLogger(__name__)
 
-# Unified schema columns expected from all SQL queries
-UNIFIED_COLUMNS = ['DatabaseName', 'TableName', 'ObjectName', 'FindingCategory', 'LastCollectTimeStamp', 'RemediationDDL']
+# Possible DDL column names across SQL files
+DDL_COLUMNS = ['RemediationDDL', 'Action_SQL']
 
-# Severity mapping per component — only 4 levels allowed: CRITICAL, HIGH, MEDIUM, LOW
-COMPONENT_SEVERITY = {
-    '01_unused_objects':      Severity.MEDIUM,
-    '02_sample_candidates':   Severity.LOW,
-    '03_missing_partition':   Severity.HIGH,
-    '04_missing_table':       Severity.HIGH,
-    '05_missing_index':       Severity.MEDIUM,
-    '06_stale_stats':         Severity.MEDIUM,
-    '07_zero_stats':          Severity.CRITICAL,
-    '08_multicolumn':         Severity.LOW,
-    '09_skipped_sample':      Severity.LOW,
-    '10_dbc_recommendations': Severity.MEDIUM,
+# Human-readable names per component
+COMPONENT_LABELS = {
+    '01_statistics_unused_objects':           'Unused Objects',
+    '02_statistics_sample_candidates':        'Sample Candidates',
+    '03_statistics_missing_partition':        'Missing PARTITION',
+    '04_statistics_missing_table':            'Missing Table Stats',
+    '05_statistics_missing_index':            'Missing Index Stats',
+    '06_statistics_stale_stats':              'Stale Statistics',
+    '07_statistics_zero_stats':               'Zero Statistics',
+    '08_statistics_multicolumn':              'Multicolumn Issues',
+    '09_statistics_skipped_sample':           'Skipped/Sample',
+    '10_statistics_dbc_recommendations':      'DBC Recommendations',
+    '11_statistics_mlppi_missing_levels':     'MLPPI Missing Levels',
+    '12_statistics_bloat':                    'Statistics Bloat',
+    '13_statistics_sampled_skew':             'Sampled Skew',
+    '14_statistics_stale_by_volume':          'Stale by Volume',
+    '15_tdstats_recommendations':             'TDStats Recommendations',
 }
+
+# Severity mapping per component — only 4 levels: CRITICAL, HIGH, MEDIUM, LOW
+COMPONENT_SEVERITY = {
+    '01_statistics_unused_objects':           Severity.MEDIUM,
+    '02_statistics_sample_candidates':        Severity.LOW,
+    '03_statistics_missing_partition':        Severity.HIGH,
+    '04_statistics_missing_table':            Severity.HIGH,
+    '05_statistics_missing_index':            Severity.MEDIUM,
+    '06_statistics_stale_stats':              Severity.MEDIUM,
+    '07_statistics_zero_stats':               Severity.CRITICAL,
+    '08_statistics_multicolumn':              Severity.LOW,
+    '09_statistics_skipped_sample':           Severity.LOW,
+    '10_statistics_dbc_recommendations':      Severity.MEDIUM,
+    '11_statistics_mlppi_missing_levels':     Severity.HIGH,
+    '12_statistics_bloat':                    Severity.MEDIUM,
+    '13_statistics_sampled_skew':             Severity.HIGH,
+    '14_statistics_stale_by_volume':          Severity.HIGH,
+    '15_tdstats_recommendations':             Severity.MEDIUM,
+}
+
+
+def _find_ddl_column(df: pd.DataFrame) -> Optional[str]:
+    """Return the name of the DDL column present in the DataFrame, or None."""
+    for col in DDL_COLUMNS:
+        if col in df.columns:
+            return col
+    return None
 
 
 class StatsAnalyzer(BaseAnalyzer):
     """
     Analyzer for Statistics Management Module (Module 2).
     
-    Processes unified 6-column DataFrames from StatsCollector, assigns severity,
-    and registers findings. Severity contract: CRITICAL, HIGH, MEDIUM, LOW only.
+    Processes DataFrames from StatsCollector (15 components with varying schemas),
+    assigns severity, and registers findings.
+    Severity contract: CRITICAL, HIGH, MEDIUM, LOW only (no INFO).
     """
     
     def __init__(self):
@@ -65,7 +97,7 @@ class StatsAnalyzer(BaseAnalyzer):
         Run analysis on collected statistics data.
         
         Args:
-            data: Dictionary mapping component names to DataFrames (unified 6-column schema)
+            data: Dictionary mapping component names to DataFrames
             config: Optional configuration with thresholds
         
         Returns:
@@ -83,42 +115,42 @@ class StatsAnalyzer(BaseAnalyzer):
                 analyzed_results[component_key] = self._analyze_component(df, component_key, severity)
             except Exception as e:
                 logger.error(f"Error analyzing {component_key}: {str(e)}")
-                analyzed_results[component_key] = pd.DataFrame(columns=UNIFIED_COLUMNS + ['Severity'])
+                analyzed_results[component_key] = pd.DataFrame()
         
         logger.info(f"Analysis complete. Total findings: {len(self.findings)}")
         return analyzed_results
     
     def _analyze_component(self, df: pd.DataFrame, component_key: str, severity: Severity) -> pd.DataFrame:
         """
-        Generic analysis for any component using the unified schema.
-        
-        Adds Severity column and registers findings.
+        Generic analysis for any component. Adds Severity column and registers findings.
+        Works with any column schema.
         """
         if df.empty:
             logger.warning(f"DataFrame is empty for {component_key}")
-            return pd.DataFrame(columns=UNIFIED_COLUMNS + ['Severity'])
+            return pd.DataFrame()
         
-        if not all(col in df.columns for col in UNIFIED_COLUMNS):
-            logger.warning(
-                f"Missing unified columns for {component_key}. "
-                f"Required: {UNIFIED_COLUMNS}, Available: {df.columns.tolist()}"
-            )
-            return pd.DataFrame(columns=UNIFIED_COLUMNS + ['Severity'])
-        
-        result_df = df[UNIFIED_COLUMNS].copy()
+        result_df = df.copy()
         result_df['Severity'] = severity.value
         
+        label = COMPONENT_LABELS.get(component_key, component_key)
+        ddl_col = _find_ddl_column(df)
+        
         for _, row in result_df.iterrows():
+            db_name = row.get('DatabaseName', 'N/A')
+            tbl_name = row.get('TableName', 'N/A')
+            obj_name = row.get('ObjectName', row.get('ColumnName', row.get('IndexName', 'TABLE LEVEL')))
+            remediation = row.get(ddl_col, '') if ddl_col else ''
+            
             self.add_finding(
                 severity=severity,
-                finding_type=row['FindingCategory'],
-                description=f"{row['FindingCategory']}: {row['DatabaseName']}.{row['TableName']} ({row['ObjectName']})",
+                finding_type=label,
+                description=f"{label}: {db_name}.{tbl_name} ({obj_name})",
                 metadata={
-                    'database': row['DatabaseName'],
-                    'table': row['TableName'],
-                    'object': row['ObjectName'],
-                    'category': row['FindingCategory'],
-                    'remediation': row['RemediationDDL'],
+                    'database': db_name,
+                    'table': tbl_name,
+                    'object': obj_name,
+                    'category': label,
+                    'remediation': remediation,
                 }
             )
         

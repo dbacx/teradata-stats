@@ -7,6 +7,7 @@ through environment variables.
 """
 
 import os
+import glob
 import logging
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
@@ -16,8 +17,22 @@ import teradatasql
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
+# Load environment variables — detect .env file dynamically
+# Priority: EPM.env > *.env > default .env
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_env_candidates = [
+    os.path.join(_project_root, 'EPM.env'),
+    *glob.glob(os.path.join(_project_root, '*.env')),
+]
+_env_loaded = False
+for _env_path in _env_candidates:
+    if os.path.isfile(_env_path):
+        load_dotenv(_env_path)
+        logger.info(f"Loaded environment from: {os.path.basename(_env_path)}")
+        _env_loaded = True
+        break
+if not _env_loaded:
+    load_dotenv()  # fallback to default .env
 
 
 class TeradataConnection:
