@@ -9,17 +9,44 @@ import pandas as pd
 import streamlit as st
 import sys
 import os
+import argparse
+from dotenv import load_dotenv
 
+# --- CONFIGURACIÓN DINÁMICA DE ENTORNO (MÚLTIPLES CLIENTES) ---
+# 1. Capturar argumentos de la línea de comandos
+parser = argparse.ArgumentParser(description="Teradata Stats Optimizer")
+parser.add_argument(
+    "--client", 
+    type=str, 
+    default="EPM",  # Cliente por defecto si no se especifica en consola
+    help="Nombre del cliente para cargar credenciales (ej: EPM, BCI)"
+)
+
+# parse_known_args evita que Streamlit colapse con sus comandos internos
+args, _ = parser.parse_known_args()
+
+# 2. Add parent directory to path for imports
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(project_root)
+
+# 3. Construir la ruta al archivo .env y cargar
+env_file = os.path.join(project_root, f"{args.client.upper()}.env")
+
+if os.path.exists(env_file):
+    # override=True fuerza a que las variables se actualicen si cambias de cliente
+    load_dotenv(env_file, override=True)
+else:
+    # Mostramos el error en la UI de Streamlit en lugar de colapsar la terminal
+    st.error(f"🚨 **Error Crítico de Configuración:** No se encontró el archivo de credenciales `{args.client.upper()}.env` en la raíz del proyecto.")
+    st.stop()
+# -------------------------------------------------------------
 
 # Blindaje contra dataframes masivos en Streamlit
 pd.set_option("styler.render.max_elements", 2000000)
 
-# Add parent directory to path for imports
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Streamlit page configuration
 st.set_page_config(
-    page_title="TD Stats Optimizer",
+    page_title=f"TD Stats Optimizer - {args.client.upper()}", # Añadimos el cliente al título
     layout="wide",
     initial_sidebar_state="expanded"
 )
