@@ -49,20 +49,20 @@ COMPONENT_LABELS = {
 
 # Severity mapping per component — only 4 levels: CRITICAL, HIGH, MEDIUM, LOW
 COMPONENT_SEVERITY = {
-    '01_statistics_unused_objects':           Severity.MEDIUM,
-    '02_statistics_sample_candidates':        Severity.LOW,
+    '01_statistics_unused_objects':           Severity.LOW,
+    '02_statistics_sample_candidates':        Severity.MEDIUM,
     '03_statistics_missing_partition':        Severity.HIGH,
-    '04_statistics_missing_table':            Severity.HIGH,
-    '05_statistics_missing_index':            Severity.MEDIUM,
-    '06_statistics_stale_stats':              Severity.MEDIUM,
+    '04_statistics_missing_table':            Severity.CRITICAL,
+    '05_statistics_missing_index':            Severity.CRITICAL,
+    '06_statistics_stale_stats':              Severity.LOW,
     '07_statistics_zero_stats':               Severity.CRITICAL,
-    '08_statistics_multicolumn':              Severity.LOW,
-    '09_statistics_skipped_sample':           Severity.LOW,
-    '10_statistics_dbc_recommendations':      Severity.MEDIUM,
+    '08_statistics_multicolumn':              Severity.MEDIUM,
+    '09_statistics_skipped_sample':           Severity.MEDIUM,
+    '10_statistics_dbc_recommendations':      Severity.HIGH,
     '11_statistics_mlppi_missing_levels':     Severity.HIGH,
     '12_statistics_bloat':                    Severity.MEDIUM,
-    '13_statistics_sampled_skew':             Severity.HIGH,
-    '14_statistics_stale_by_volume':          Severity.HIGH,
+    '13_statistics_sampled_skew':             Severity.CRITICAL,
+    '14_statistics_stale_by_volume':          Severity.CRITICAL,
     '15_tdstats_recommendations':             Severity.MEDIUM,
 }
 
