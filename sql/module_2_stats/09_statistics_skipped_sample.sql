@@ -14,6 +14,7 @@
 -- Environment : Teradata 20
 -- =============================================================================
 
+
 WITH Tablas_Con_Datos AS (
     -- Validamos que la tabla tenga espacio físico (datos reales)
     SELECT DatabaseName, TableName
@@ -39,6 +40,7 @@ Impacto_CPU_Tablas AS (
           'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
           'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
       )
+	  
     GROUP BY 1, 2
 )
 SELECT DISTINCT 
@@ -71,4 +73,5 @@ WHERE t.TableKind = 'T'
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
+  and ObjectName not like'%CASE%'
 ORDER BY COALESCE(c.Total_Impact_CPU, 0) DESC, s.DatabaseName, s.TableName;

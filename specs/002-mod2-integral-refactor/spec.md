@@ -16,16 +16,16 @@ El Módulo 2 presenta fallas estructurales: colapsa en tiempo de ejecución al v
 Los 10 queries SQL DEBEN retornar estrictamente este DDL de salida (en este orden y con estos alias). Si el query no tiene el dato, usar `CAST(NULL AS [TIPO])` o strings estáticos:
 1. `DatabaseName` (VARCHAR)
 2. `TableName` (VARCHAR)
-3. `ObjectName` (VARCHAR)
+3. `ColumnName` (VARCHAR)
 4. `FindingCategory` (VARCHAR) -> Nombre de la regla.
 5. `LastCollectTimeStamp` (TIMESTAMP)
 6. `RemediationDDL` (VARCHAR)
 
 ### Contrato 2: Presentación (Orden Obligatorio)
 Tanto las tarjetas de KPI como la iteración de tablas en la UI DEBEN seguir este orden exacto:
-1. 'Missing PARTITION'
+1. 'Missing Index Stats'
 2. 'Missing Table Stats'
-3. 'Missing Index Stats'
+3. 'Missing PARTITION'
 4. 'Zero Statistics'
 5. 'Stale Statistics'
 6. 'Multicolumn Issues'
