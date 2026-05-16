@@ -185,6 +185,7 @@ credentials/
 *.csv
 *.parquet
 *.json
+!knowledge_base/index.json
 *.xlsx
 *.xls
 data/

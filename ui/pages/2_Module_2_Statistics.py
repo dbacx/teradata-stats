@@ -12,6 +12,7 @@ import logging
 import sys
 import os
 import time
+import json
 from pathlib import Path
 
 # ---------------------------------------------------------
@@ -251,28 +252,74 @@ def display_findings_table(analyzed_data: dict):
     )
 
 
+def _load_kb_index() -> dict:
+    """Load knowledge_base/index.json mapping categories to KB metadata."""
+    kb_index_path = Path(__file__).resolve().parent.parent.parent / "knowledge_base" / "index.json"
+    try:
+        with open(kb_index_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.warning(f"KB index not loaded: {e}")
+        return {}
+
+
+def _load_kb_script(script_file: str) -> str:
+    """Read a KB SQL script from knowledge_base/[script_file]."""
+    kb_script_path = Path(__file__).resolve().parent.parent.parent / "knowledge_base" / script_file
+    try:
+        with open(kb_script_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.warning(f"KB script not found: {kb_script_path}")
+        return ""
+
+
 def display_ddl_actions(analyzed_data: dict):
-    """Display DDL remediation scripts grouped by component using st.code blocks."""
+    """Display DDL remediation scripts grouped by component.
+
+    For categories registered in knowledge_base/index.json, the KB script
+    is rendered once inside an st.expander (deduplicated, not per row).
+    For categories not in the KB, the per-row RemediationDDL from the
+    DataFrame is rendered as before.
+    """
     st.subheader("Scripts de Remediación")
-    
+
+    kb_index = _load_kb_index()
+    rendered_kb_categories = set()
+
     has_any_ddl = False
     all_ddl_lines = []
-    
+
     for component_name, component_key in COMPONENT_RENDER_ORDER:
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
         if df.empty:
             continue
-        
+
+        # --- KB path: render once per category via st.expander ---
+        if component_name in kb_index and component_name not in rendered_kb_categories:
+            kb_entry = kb_index[component_name]
+            script_content = _load_kb_script(kb_entry["script_file"])
+            if script_content:
+                has_any_ddl = True
+                rendered_kb_categories.add(component_name)
+                expander_title = f"{kb_entry['id']} - {kb_entry['description']}"
+                with st.expander(expander_title):
+                    st.code(script_content, language="sql")
+                all_ddl_lines.append(f"-- {expander_title}")
+                all_ddl_lines.append(script_content)
+            continue
+
+        # --- Fallback: per-row DDL from DataFrame ---
         ddl_values = _get_ddl_values(df)
         if not ddl_values:
             continue
-        
+
         has_any_ddl = True
         st.markdown(f"#### {component_name}")
         component_ddl = "\n".join(ddl_values)
         st.code(component_ddl, language="sql")
         all_ddl_lines.extend(ddl_values)
-    
+
     if has_any_ddl:
         st.markdown("---")
         combined_ddl = "\n".join(all_ddl_lines)

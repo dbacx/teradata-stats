@@ -1,0 +1,7 @@
+{
+  "DBC Recommendations": {
+    "id": "KB0026099",
+    "description": "Collect Statistics on DBC System Tables",
+    "script_file": "KB0026099_dipdbcstats.sql"
+  }
+}
