@@ -158,7 +158,7 @@ def display_findings_table(analyzed_data: dict):
         return colors.get(val, '')
     
     if 'Severity' in combined_df.columns:
-        styled_df = combined_df.style.applymap(highlight_severity, subset=['Severity'])
+        styled_df = combined_df.style.map(highlight_severity, subset=['Severity'])
     else:
         styled_df = combined_df.style
     
