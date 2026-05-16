@@ -37,25 +37,25 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Contrato de severidades — orden estricto de criticidad
-SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+SEVERITY_ORDER = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INFO']
 
 # Orden de renderizado de las 15 categorías (criticidad descendente)
 COMPONENT_RENDER_ORDER = [
-    ("Zero Statistics",        "07_statistics_zero_stats"),         # CRITICAL
-    ("Missing PARTITION",      "03_statistics_missing_partition"),  # HIGH
-    ("Missing Table Stats",    "04_statistics_missing_table"),      # CRITICAL
+    ("Zero Statistics",        "07_statistics_zero_stats"),           # CRITICAL
+    ("Missing Table Stats",    "04_statistics_missing_table"),        # CRITICAL
+    ("Sampled Skew",           "13_statistics_sampled_skew"),         # CRITICAL
+    ("Stale by Volume",        "14_statistics_stale_by_volume"),      # CRITICAL
+    ("Missing Index Stats",    "05_statistics_missing_index"),        # CRITICAL
+    ("Missing PARTITION",      "03_statistics_missing_partition"),    # HIGH
     ("MLPPI Missing Levels",   "11_statistics_mlppi_missing_levels"), # HIGH
-    ("Sampled Skew",           "13_statistics_sampled_skew"),       # CRITICAL
-    ("Stale by Volume",        "14_statistics_stale_by_volume"),    # CRITICAL
-    ("Unused Objects",         "01_statistics_unused_objects"),      # LOW
-    ("Missing Index Stats",    "05_statistics_missing_index"),      # CRITICAL
-    ("Stale Statistics",       "06_statistics_stale_stats"),        # LOW
-    ("Multicolumn Issues",     "08_statistics_multicolumn"),        # MEDIUM
-    ("DBC Recommendations",    "10_statistics_dbc_recommendations"),# HIGH
-    ("Statistics Bloat",       "12_statistics_bloat"),              # MEDIUM
-    ("TDStats Recommendations","15_tdstats_recommendations"),       # INFO
-    ("Sample Candidates",      "02_statistics_sample_candidates"),  # MEDIUM
-    ("Skipped/Sample",         "09_statistics_skipped_sample"),     # MEDIUM
+    ("DBC Recommendations",    "10_statistics_dbc_recommendations"),  # HIGH
+    ("Multicolumn Issues",     "08_statistics_multicolumn"),          # MEDIUM
+    ("Statistics Bloat",       "12_statistics_bloat"),                # MEDIUM
+    ("Sample Candidates",      "02_statistics_sample_candidates"),    # MEDIUM
+    ("Skipped/Sample",         "09_statistics_skipped_sample"),       # MEDIUM
+    ("Unused Objects",         "01_statistics_unused_objects"),       # LOW
+    ("Stale Statistics",       "06_statistics_stale_stats"),          # LOW
+    ("TDStats Recommendations","15_tdstats_recommendations"),         # INFO
 ]
 
 
