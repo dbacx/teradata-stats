@@ -147,7 +147,7 @@ def display_kpi_cards(analyzed_data: dict):
                 severity_counts[severity] += len(df[df['Severity'] == severity])
             total_findings += len(df)
     
-    # Contrato AC-01: exactamente 4 columnas (st.columns(4))
+    # Contrato AC-01: exactamente 5 columnas (st.columns(5))
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("CRITICAL", severity_counts['CRITICAL'])
@@ -157,7 +157,8 @@ def display_kpi_cards(analyzed_data: dict):
         st.metric("MEDIUM", severity_counts['MEDIUM'])
     with col4:
         st.metric("LOW", severity_counts['LOW'])
-    
+    with col5:
+        st.metric("INFO", severity_counts['INFO'])    
     st.markdown("---")
     
     # Component counts — 15 categories in 5-column grid
@@ -198,7 +199,7 @@ def display_findings_table(analyzed_data: dict):
     
     combined_df = pd.concat(all_findings, ignore_index=True)
     
-    # Severity filter — only 4 levels
+    # Severity filter — only 5 levels
     severity_filter = st.multiselect(
         "Filtrar por Severidad",
         options=SEVERITY_ORDER,
