@@ -45,6 +45,7 @@ INNER JOIN (
         ON ts.DatabaseName = tb.DatabaseName 
         AND ts.TableName   = tb.TableName
     WHERE tb.TableKind = 'T'
+	AND tb.AuthName is null
     GROUP BY 1, 2
 ) t ON s.DatabaseName = t.DatabaseName 
    AND s.TableName    = t.TableName

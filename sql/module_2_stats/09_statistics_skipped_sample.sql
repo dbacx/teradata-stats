@@ -73,5 +73,6 @@ WHERE t.TableKind = 'T'
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
+  AND t.AuthName is null
   and ObjectName not like'%CASE%'
 ORDER BY COALESCE(c.Total_Impact_CPU, 0) DESC, s.DatabaseName, s.TableName;

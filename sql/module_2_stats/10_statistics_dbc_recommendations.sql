@@ -105,4 +105,5 @@ WHERE t.DatabaseName IN ('PDCRDATA', 'PDCRINFO')
       'SysRcvStatJournal', 'TransientJournal', 'UtilityLockJournalTable',
       'UpdateSpace', 'AccessLog'
   )
+  AND t.AuthName is null
 ORDER BY 1, 2;

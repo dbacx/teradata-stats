@@ -71,4 +71,5 @@ WHERE t.TableKind IN ('T', 'O', 'Q')
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
+  AND t.AuthName is null
 ORDER BY s.RowCount DESC;

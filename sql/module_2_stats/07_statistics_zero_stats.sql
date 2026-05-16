@@ -25,7 +25,8 @@ WITH Tamaño_Tablas AS (
         ON ts.DatabaseName = tb.DatabaseName 
        AND ts.TableName    = tb.TableName
     -- CORRECCIÓN 1: Inclusión estricta de PPI, NoPI y Colas (ignora NOS 'F')
-    WHERE tb.TableKind IN ('T', 'O', 'Q') 
+    WHERE tb.TableKind IN ('T', 'O', 'Q')
+	AND tb.AuthName is null	
     GROUP BY 1, 2
     -- CORRECCIÓN 2: Omitir los cascarones vacíos y sus Table Headers (< 10 MB)
     -- Esto garantiza cumplir la regla: "For tables that truly do not have data, this is not an issue"

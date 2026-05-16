@@ -25,6 +25,7 @@ WITH Tablas_Fisicas AS (
         ON ts.DatabaseName = t.DatabaseName
         AND ts.TableName = t.TableName
     WHERE t.TableKind IN ('T', 'O', 'Q')
+	AND t.AuthName is null
     GROUP BY 1, 2
     HAVING SUM(ts.CurrentPerm) > 10485760 -- Omitimos tablas vacías o solo con headers (>10MB)
 ),
@@ -68,4 +69,5 @@ WHERE ms.Stats_RowCount > 0
         'LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR',
         'TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA','PDCRSTG','SYSDBA', 'CONSOLE'
   )
+  AND t.AuthName is null
 ORDER BY Real_Size_GB DESC, Pseudo_Bytes_Per_Row DESC;

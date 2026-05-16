@@ -88,4 +88,5 @@ LEFT JOIN Impacto_CPU_Tablas c
     ON cl.DatabaseName = c.ObjectDatabaseName 
     AND cl.TableName = c.ObjectTableName
 WHERE t.TableKind = 'T'
+AND t.AuthName is null
 ORDER BY Total_Impact_CPU DESC, cl.DatabaseName, cl.TableName;

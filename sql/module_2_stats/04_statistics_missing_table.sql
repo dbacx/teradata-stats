@@ -26,6 +26,7 @@ WITH Tablas_Fisicas AS (
         ON ts.DatabaseName = t.DatabaseName
         AND ts.TableName = t.TableName
     WHERE t.TableKind IN ('T', 'O', 'Q')
+	AND t.AuthName is null
     GROUP BY 1, 2
     HAVING SUM(ts.CurrentPerm) > 10485760 -- > 10 MB
 ),
