@@ -370,7 +370,7 @@ def main():
     )
     
     # Execute Analysis Button
-    if st.sidebar.button("Ejecutar Análisis Módulo 2", type="primary"):
+    if st.sidebar.button("Ejecutar", type="primary"):
         try:
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):
