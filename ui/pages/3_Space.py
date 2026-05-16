@@ -17,8 +17,8 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod4_space_collector import SpaceCollector
-from analyzers.mod4_space_analyzer import SpaceAnalyzer
+from collectors.mod3_space_collector import SpaceCollector
+from analyzers.mod3_space_analyzer import SpaceAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging

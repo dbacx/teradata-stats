@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class SecurityCollector(BaseCollector):
     """
-    Collector for Security Assessment Module (Module 6).
+    Collector for Security Assessment Module (Module 10).
     
     Collects data from 5 components:
     1. Password Expiry - Users with expired passwords
@@ -29,7 +29,7 @@ class SecurityCollector(BaseCollector):
     
     def __init__(self):
         """Initialize the Security Collector."""
-        super().__init__(module_name='module_6_security')
+        super().__init__(module_name='module_10_security')
         self.sql_files = [
             '01_password_expiry.sql',
             '02_users_without_profile.sql',

@@ -18,8 +18,8 @@ import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod6_security_collector import SecurityCollector
-from analyzers.mod6_security_analyzer import SecurityAnalyzer
+from collectors.mod10_security_collector import SecurityCollector
+from analyzers.mod10_security_analyzer import SecurityAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging

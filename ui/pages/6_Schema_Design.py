@@ -16,8 +16,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod7_schema_collector import SchemaCollector
-from analyzers.mod7_schema_analyzer import SchemaAnalyzer
+from collectors.mod6_schema_collector import SchemaCollector
+from analyzers.mod6_schema_analyzer import SchemaAnalyzer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -16,8 +16,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from core.connection import TeradataConnection
-from collectors.mod5_config_collector import ConfigCollector
-from analyzers.mod5_config_analyzer import ConfigAnalyzer
+from collectors.mod4_config_collector import ConfigCollector
+from analyzers.mod4_config_analyzer import ConfigAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging

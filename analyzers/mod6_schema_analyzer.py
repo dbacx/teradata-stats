@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class SchemaAnalyzer(BaseAnalyzer):
     """
-    Analyzer for Schema Design Module (Module 7).
+    Analyzer for Schema Design Module (Module 6).
     
     Analyzes data from 3 components to identify schema design issues:
     1. Fallback Tables - Tables with Fallback protection enabled

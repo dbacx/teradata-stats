@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class CleanupCollector(BaseCollector):
     """
-    Collector for Cleanup & Cost Optimization Module (Module 9).
+    Collector for Cleanup & Cost Optimization Module (Module 8).
     
     Collects data from 2 components:
     1. Empty Tables - Tables not consuming space
@@ -26,7 +26,7 @@ class CleanupCollector(BaseCollector):
     
     def __init__(self):
         """Initialize the Cleanup Collector."""
-        super().__init__(module_name='module_9_cleanup')
+        super().__init__(module_name='module_8_cleanup')
         self.sql_files = [
             '01_empty_tables.sql',
             '02_stale_temp_tables.sql'

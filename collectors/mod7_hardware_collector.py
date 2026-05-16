@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class HardwareCollector(BaseCollector):
     """
-    Collector for Hardware Utilization Module (Module 8).
+    Collector for Hardware Utilization Module (Module 7).
     
     Collects data from 2 components:
     1. AMP Space Skew - Space distribution across AMPs
@@ -25,7 +25,7 @@ class HardwareCollector(BaseCollector):
     
     def __init__(self):
         """Initialize the Hardware Collector."""
-        super().__init__(module_name='module_8_hardware')
+        super().__init__(module_name='module_7_hardware')
         self.sql_files = [
             '01_amp_space_skew.sql',
             '02_node_cpu.sql'
