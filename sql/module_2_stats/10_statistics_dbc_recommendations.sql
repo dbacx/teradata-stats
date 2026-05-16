@@ -26,7 +26,7 @@ SELECT DISTINCT
     'TABLE LEVEL'                                           AS ObjectName,
     'DBC Recommendations'                                   AS FindingCategory,
     CAST(NULL AS TIMESTAMP(0))                              AS LastCollectTimeStamp,
-    'COLLECT STATISTICS ' || TRIM(t.DatabaseName) || '.' || TRIM(t.TableName) || ';' AS RemediationDDL
+    'COLLECT STATISTICS ' || TRIM(t.DatabaseName) || '.' || TRIM(t.TableName) || ';' AS Action_SQL
 FROM DBC.TablesV t
 INNER JOIN Tablas_Con_Datos td
     ON t.DatabaseName = td.DatabaseName

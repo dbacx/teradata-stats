@@ -49,7 +49,7 @@ SELECT DISTINCT
     TRIM(s.ColumnName)                                      AS ObjectName,
     'Skipped/Sample Stats'                                  AS FindingCategory,
     s.LastCollectTimeStamp                                   AS LastCollectTimeStamp,
-    'COLLECT STATISTICS COLUMN (' || TRIM(s.ColumnName) || ') ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';' AS RemediationDDL
+    'COLLECT STATISTICS COLUMN (' || TRIM(s.ColumnName) || ') ON ' || TRIM(s.DatabaseName) || '.' || TRIM(s.TableName) || ';' AS Action_SQL
 FROM DBC.StatsV s
 INNER JOIN DBC.TablesV t 
     ON s.DatabaseName = t.DatabaseName 
