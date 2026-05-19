@@ -213,6 +213,7 @@ def render_01_cds_report(df: pd.DataFrame):
         st.info("Sin datos para CDS Report")
         return
 
+    df['Value'] = pd.to_numeric(df['Value'], errors='coerce').fillna(0)
     params = dict(zip(df['Parameter'].str.strip(), df['Value']))
     cds_pct = float(params.get('06. CDS Utilization (%)', 0))
     cds_consumed = float(params.get('04. CDS Consumed (TB)', 0))
@@ -278,6 +279,8 @@ def render_02_forecast(df: pd.DataFrame):
         return
 
     df = df.copy()
+    df['TotalMaxPerm_TB'] = pd.to_numeric(df['TotalMaxPerm_TB'], errors='coerce').fillna(0)
+    df['TotalCurPerm_TB'] = pd.to_numeric(df['TotalCurPerm_TB'], errors='coerce').fillna(0)
     max_cap = df['TotalMaxPerm_TB'].max()
     cur_vals = df['TotalCurPerm_TB'].values.tolist()
 
@@ -340,6 +343,7 @@ def render_03_unused_objects(df: pd.DataFrame):
         st.info("Sin datos para Unused Objects")
         return
 
+    df['Size_GB'] = pd.to_numeric(df['Size_GB'], errors='coerce').fillna(0)
     total_gb = df['Size_GB'].sum()
     total_tables = len(df)
 
@@ -348,6 +352,26 @@ def render_03_unused_objects(df: pd.DataFrame):
         st.metric("Total GB Desperdiciados", f"{total_gb:,.1f}")
     with c2:
         st.metric("Tablas Sin Uso", total_tables)
+
+    # Horizontal bar chart: object count by database
+    if 'DataBaseName' in df.columns:
+        db_counts = df.groupby('DataBaseName').agg(
+            Object_Count=('TableName', 'count'),
+            Total_Size_GB=('Size_GB', 'sum')
+        ).reset_index().sort_values('Object_Count', ascending=True)
+        fig_bar = px.bar(
+            db_counts, y='DataBaseName', x='Object_Count', orientation='h',
+            title='Conteo de Objetos Sin Uso por Base de Datos',
+            labels={'Object_Count': 'Cantidad de Objetos', 'DataBaseName': 'Base de Datos'},
+            text='Object_Count', color='Total_Size_GB',
+            color_continuous_scale=['#FFD700', '#FF6B00', '#E24B4A'],
+        )
+        fig_bar.update_layout(height=400, yaxis={'categoryorder': 'total ascending'})
+        fig_bar.update_traces(textposition='outside')
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+        st.dataframe(db_counts.sort_values('Object_Count', ascending=False),
+                     use_container_width=True, height=250)
 
     fig = px.treemap(
         df, path=['DataBaseName', 'TableName'], values='Size_GB',
@@ -380,6 +404,8 @@ def render_04_duplicate_objects(df: pd.DataFrame):
         st.info("Sin datos para Duplicate Objects")
         return
 
+    df['Size_GB'] = pd.to_numeric(df['Size_GB'], errors='coerce').fillna(0)
+
     fig = px.sunburst(
         df, path=['DataBaseName', 'TableName'], values='Size_GB',
         title='Sunburst: Tablas Duplicadas / Backup',
@@ -406,6 +432,7 @@ def render_05_06_mvc(df: pd.DataFrame, component_label: str):
 
     if has_size:
         df_plot = df.copy()
+        df_plot['Size_GB'] = pd.to_numeric(df_plot['Size_GB'], errors='coerce').fillna(0)
         df_plot['Estimated_Compressed_GB'] = df_plot['Size_GB'] * np.random.uniform(0.3, 0.6, len(df_plot))
         df_plot['Estimated_Compressed_GB'] = df_plot['Estimated_Compressed_GB'].round(2)
 
@@ -445,6 +472,10 @@ def render_07_top_databases(df: pd.DataFrame):
         return
 
     df = df.copy()
+    # Force numeric types on all metric columns
+    for col in ['Total_Size_GB', 'Net_Data_GB', 'CurrentPerm_GB', 'MaxPerm_GB', 'Free_GB', 'Effective_Pct_Used']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     # Derive MaxPerm and Free from available columns
     if 'Total_Size_GB' in df.columns and 'Net_Data_GB' in df.columns:
         df['CurrentPerm_GB'] = df['Net_Data_GB']
@@ -516,6 +547,8 @@ def render_08_top_tables(df: pd.DataFrame):
         st.info("Sin datos para Top 20 Tables")
         return
 
+    df['Total_Size_GB'] = pd.to_numeric(df['Total_Size_GB'], errors='coerce').fillna(0)
+    df['Skew_Pct'] = pd.to_numeric(df['Skew_Pct'], errors='coerce').fillna(0)
     df = df.sort_values('Total_Size_GB', ascending=True).tail(20)
 
     fig = px.bar(
@@ -535,6 +568,9 @@ def render_09_unused_databases(df: pd.DataFrame):
         return
 
     df = df.copy()
+    for col in ['Total_Size_GB', 'CurrentPerm_GB', 'Days_Unused', 'Object_Count']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
     # Simulate days unused and object count for mock data
     if 'Days_Unused' not in df.columns:
         df['Days_Unused'] = np.random.randint(30, 365, len(df))
@@ -576,6 +612,9 @@ def render_10_monthly_snapshot(df: pd.DataFrame):
         return
 
     df = df.copy()
+    for col in ['Spool_TB', 'Temp_TB', 'CurrentPerm_TB', 'PeakPerm_TB']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
     # Build a heatmap: databases (rows) x months (columns) with MoM growth %
     # Since the SQL returns system-level aggregates, we simulate per-DB breakdown
@@ -635,6 +674,9 @@ def render_11_space_utilization(df: pd.DataFrame):
         return
 
     df = df.copy()
+    for col in ['MaxPerm_GB', 'CurrentPerm_GB', 'Effective_Space_GB', 'Global_Util_Pct', 'Effective_Util_Pct', 'Skew_Pct']:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
     # Color by utilization: red for critical (>85%), orange (70-85%), blue (<70%)
     colors = []
