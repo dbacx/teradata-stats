@@ -68,14 +68,14 @@ def generate_mock_data() -> dict:
               'archive_transactions', 'test_regression']
     sizes = [45.2, 12.8, 8.5, 22.1, 67.3, 15.4, 33.7, 5.9]
     data['03_Suspected_Unused_Objects'] = pd.DataFrame({
-        'DatabaseName': dbs, 'TableName': tables,
+        'DataBaseName': dbs, 'TableName': tables,
         'Size_GB': sizes, 'Accesos_30D': [0]*8,
         'Status': ['Flagged for Archiving Review']*8
     })
 
     # 04_Suspected_Duplicate_Objects
     data['04_Suspected_Duplicate_Objects'] = pd.DataFrame({
-        'DatabaseName': ['SALES_DB']*4 + ['HR_DB']*2,
+        'DataBaseName': ['SALES_DB']*4 + ['HR_DB']*2,
         'TableName': ['fact_orders', 'fact_orders_BKP', 'fact_orders_OLD',
                        'fact_orders_COPY', 'dim_employees_BK', 'dim_employees_OLD'],
         'TableKind': ['T']*6,
@@ -89,7 +89,7 @@ def generate_mock_data() -> dict:
 
     # 05_MVC_Opportunities_Uncompressed_Tables
     data['05_MVC_Opportunities_Uncompressed_Tables'] = pd.DataFrame({
-        'DatabaseName': ['SALES_DB', 'FINANCE_DB', 'LOGS_DB', 'MARKETING_DB', 'STAGING_DB'],
+        'DataBaseName': ['SALES_DB', 'FINANCE_DB', 'LOGS_DB', 'MARKETING_DB', 'STAGING_DB'],
         'TableName': ['fact_transactions', 'gl_entries', 'audit_trail',
                        'campaign_clicks', 'stg_raw_feed'],
         'Size_GB': [120.5, 85.3, 200.1, 45.8, 67.2],
@@ -99,7 +99,7 @@ def generate_mock_data() -> dict:
 
     # 06_MVC_Opportunities_Compressed_Tables
     data['06_MVC_Opportunities_Compressed_Tables'] = pd.DataFrame({
-        'DatabaseName': ['SALES_DB', 'HR_DB', 'FINANCE_DB', 'MARKETING_DB'],
+        'DataBaseName': ['SALES_DB', 'HR_DB', 'FINANCE_DB', 'MARKETING_DB'],
         'TableName': ['dim_product', 'dim_department', 'dim_account', 'dim_channel'],
         'ColumnName': ['status_flag', 'is_active', 'account_type', 'channel_code'],
         'ColumnType': ['I1', 'I1', 'CF', 'CF'],
@@ -116,7 +116,7 @@ def generate_mock_data() -> dict:
     total_sizes = sorted(np.random.uniform(50, 500, 20).tolist(), reverse=True)
     net_data = [s * np.random.uniform(0.5, 0.9) for s in total_sizes]
     data['07_Top_20_Databases_By_Used_Size'] = pd.DataFrame({
-        'DatabaseName': db_names,
+        'DataBaseName': db_names,
         'Total_Size_GB': [round(s, 2) for s in total_sizes],
         'Net_Data_GB': [round(n, 2) for n in net_data],
     })
@@ -126,7 +126,7 @@ def generate_mock_data() -> dict:
     tbl_sizes = sorted(np.random.uniform(10, 300, 20).tolist(), reverse=True)
     skew_pcts = np.random.uniform(0, 80, 20).tolist()
     data['08_Top_20_Tables_By_Size'] = pd.DataFrame({
-        'DatabaseName': [f'DB_{np.random.randint(1,6):02d}' for _ in range(20)],
+        'DataBaseName': [f'DB_{np.random.randint(1,6):02d}' for _ in range(20)],
         'TableName': tbl_names,
         'Total_Size_GB': [round(s, 2) for s in tbl_sizes],
         'Skew_Pct': [round(sk, 2) for sk in skew_pcts],
@@ -134,7 +134,7 @@ def generate_mock_data() -> dict:
 
     # 09_Top_20_Unused_Databases_By_Size
     data['09_Top_20_Unused_Databases_By_Size'] = pd.DataFrame({
-        'DatabaseName': [f'UNUSED_DB_{i}' for i in range(1, 16)],
+        'DataBaseName': [f'UNUSED_DB_{i}' for i in range(1, 16)],
         'Total_Size_GB': sorted(np.random.uniform(10, 200, 15).tolist(), reverse=True),
         'Total_Queries_30D': [0]*15,
     })
@@ -159,7 +159,7 @@ def generate_mock_data() -> dict:
     util_pcts = np.random.uniform(20, 99, n_dbs)
     current_perms = max_perms * util_pcts / 100.0
     data['11_Database_Space_Utilization'] = pd.DataFrame({
-        'DatabaseName': [f'DB_{i:03d}' for i in range(1, n_dbs + 1)],
+        'DataBaseName': [f'DB_{i:03d}' for i in range(1, n_dbs + 1)],
         'MaxPerm_GB': np.round(max_perms, 2).tolist(),
         'CurrentPerm_GB': np.round(current_perms, 2).tolist(),
         'Effective_Space_GB': np.round(current_perms * np.random.uniform(1.0, 1.3, n_dbs), 2).tolist(),
@@ -316,6 +316,7 @@ def render_02_forecast(df: pd.DataFrame):
         xaxis_title='Mes', yaxis_title='TB Consumidos',
         height=400, legend=dict(orientation='h', yanchor='bottom', y=1.02)
     )
+    fig.update_yaxes(rangemode="tozero")
     st.plotly_chart(fig, use_container_width=True)
 
     # KPIs
@@ -349,7 +350,7 @@ def render_03_unused_objects(df: pd.DataFrame):
         st.metric("Tablas Sin Uso", total_tables)
 
     fig = px.treemap(
-        df, path=['DatabaseName', 'TableName'], values='Size_GB',
+        df, path=['DataBaseName', 'TableName'], values='Size_GB',
         color='Size_GB',
         color_continuous_scale=['#FFD700', '#FF6B00', '#E24B4A'],
         title='Treemap: Objetos Sin Uso por Base de Datos'
@@ -362,7 +363,7 @@ def render_03_unused_objects(df: pd.DataFrame):
         ddl_script = '\n'.join(df['DDL_Statement'].dropna().tolist())
     else:
         ddl_script = '\n'.join(
-            f"DROP TABLE {r['DatabaseName']}.{r['TableName']};"
+            f"DROP TABLE {r['DataBaseName']}.{r['TableName']};"
             for _, r in df.iterrows()
         )
     st.download_button(
@@ -380,7 +381,7 @@ def render_04_duplicate_objects(df: pd.DataFrame):
         return
 
     fig = px.sunburst(
-        df, path=['DatabaseName', 'TableName'], values='Size_GB',
+        df, path=['DataBaseName', 'TableName'], values='Size_GB',
         title='Sunburst: Tablas Duplicadas / Backup',
         color='Size_GB', color_continuous_scale='YlOrRd'
     )
@@ -390,7 +391,7 @@ def render_04_duplicate_objects(df: pd.DataFrame):
     total_savable = df['Size_GB'].sum()
     st.metric("Espacio Potencial a Liberar", f"{total_savable:,.1f} GB")
 
-    st.dataframe(df[['DatabaseName', 'TableName', 'Size_GB', 'Created_Date',
+    st.dataframe(df[['DataBaseName', 'TableName', 'Size_GB', 'Created_Date',
                       'Last_Alter_Date', 'Status']],
                  use_container_width=True, height=300)
 
@@ -430,7 +431,7 @@ def render_05_06_mvc(df: pd.DataFrame, component_label: str):
 
     if 'DDL_Statement' in df.columns:
         st.subheader("Comandos ALTER TABLE")
-        st.dataframe(df[['DatabaseName', 'TableName', 'DDL_Statement']],
+        st.dataframe(df[['DataBaseName', 'TableName', 'DDL_Statement']],
                      use_container_width=True, height=250)
     elif 'Diagnostico' in df.columns:
         st.subheader("Diagnosticos")
@@ -465,12 +466,12 @@ def render_07_top_databases(df: pd.DataFrame):
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
-        y=df['DatabaseName'], x=df['CurrentPerm_GB'],
+        y=df['DataBaseName'], x=df['CurrentPerm_GB'],
         name='CurrentPerm GB', orientation='h',
         marker_color=colors
     ))
     fig.add_trace(go.Bar(
-        y=df['DatabaseName'], x=df['Free_GB'],
+        y=df['DataBaseName'], x=df['Free_GB'],
         name='Free GB', orientation='h',
         marker_color='#D3D3D3'
     ))
@@ -503,7 +504,7 @@ def render_07_top_databases(df: pd.DataFrame):
             pass
         return ''
 
-    styled = df[['DatabaseName', 'CurrentPerm_GB', 'MaxPerm_GB', 'Free_GB', 'Effective_Pct_Used']].style.map(
+    styled = df[['DataBaseName', 'CurrentPerm_GB', 'MaxPerm_GB', 'Free_GB', 'Effective_Pct_Used']].style.map(
         style_pct, subset=['Effective_Pct_Used']
     )
     st.dataframe(styled, use_container_width=True, height=400)
@@ -544,7 +545,7 @@ def render_09_unused_databases(df: pd.DataFrame):
 
     fig = px.scatter(
         df, x='Days_Unused', y='CurrentPerm_GB',
-        size='Object_Count', hover_name='DatabaseName',
+        size='Object_Count', hover_name='DataBaseName',
         title='Cuadrante Analitico: Bases Sin Uso',
         labels={'Days_Unused': 'Dias Sin Acceso', 'CurrentPerm_GB': 'Tamano GB'},
         color_discrete_sequence=['#4354E9']
@@ -578,7 +579,7 @@ def render_10_monthly_snapshot(df: pd.DataFrame):
 
     # Build a heatmap: databases (rows) x months (columns) with MoM growth %
     # Since the SQL returns system-level aggregates, we simulate per-DB breakdown
-    if 'DatabaseName' not in df.columns:
+    if 'DataBaseName' not in df.columns:
         # Create synthetic per-database breakdown from aggregate
         top_dbs = [f'DB_{i:02d}' for i in range(1, 11)]
         records = []
@@ -587,7 +588,7 @@ def render_10_monthly_snapshot(df: pd.DataFrame):
             for db in top_dbs:
                 frac = np.random.uniform(0.05, 0.2)
                 records.append({
-                    'DatabaseName': db,
+                    'DataBaseName': db,
                     'Month': str(row['Mes_Snapshot'])[:7],
                     'CurrentPerm_TB': round(total_perm * frac, 4)
                 })
@@ -599,7 +600,7 @@ def render_10_monthly_snapshot(df: pd.DataFrame):
 
     # Calculate MoM growth per database
     pivot = df_expanded.pivot_table(
-        index='DatabaseName', columns='Month', values='CurrentPerm_TB', aggfunc='sum'
+        index='DataBaseName', columns='Month', values='CurrentPerm_TB', aggfunc='sum'
     )
     pivot = pivot.sort_index(axis=1)
 
@@ -660,7 +661,7 @@ def render_11_space_utilization(df: pd.DataFrame):
         x=df['MaxPerm_GB'], y=df['CurrentPerm_GB'],
         mode='markers', name='Databases',
         marker=dict(size=10, color=colors, line=dict(width=1, color='#333')),
-        text=df['DatabaseName'],
+        text=df['DataBaseName'],
         hovertemplate='<b>%{text}</b><br>MaxPerm: %{x:.1f} GB<br>CurrentPerm: %{y:.1f} GB<extra></extra>'
     ))
 

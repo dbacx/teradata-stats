@@ -142,30 +142,30 @@ class SpaceAnalyzer(BaseAnalyzer):
     
     def _generate_drop_ddl(self, df: pd.DataFrame) -> pd.DataFrame:
         """Generate DROP TABLE DDL for unused objects."""
-        if 'DatabaseName' in df.columns and 'TableName' in df.columns:
-            df['DDL_Statement'] = 'DROP TABLE ' + df['DatabaseName'].astype(str) + '.' + df['TableName'].astype(str) + ';'
+        if 'DataBaseName' in df.columns and 'TableName' in df.columns:
+            df['DDL_Statement'] = 'DROP TABLE ' + df['DataBaseName'].astype(str) + '.' + df['TableName'].astype(str) + ';'
             df['DDL_Action'] = 'DROP TABLE'
         return df
     
     def _generate_duplicate_ddl(self, df: pd.DataFrame) -> pd.DataFrame:
         """Generate DROP TABLE DDL for suspected duplicate objects."""
-        if 'DatabaseName' in df.columns and 'TableName' in df.columns:
-            df['DDL_Statement'] = 'DROP TABLE ' + df['DatabaseName'].astype(str) + '.' + df['TableName'].astype(str) + ';'
+        if 'DataBaseName' in df.columns and 'TableName' in df.columns:
+            df['DDL_Statement'] = 'DROP TABLE ' + df['DataBaseName'].astype(str) + '.' + df['TableName'].astype(str) + ';'
             df['DDL_Action'] = 'DROP TABLE'
         return df
     
     def _generate_compress_ddl(self, df: pd.DataFrame) -> pd.DataFrame:
         """Generate ALTER TABLE ADD COMPRESS DDL for MVC opportunities."""
-        if 'DatabaseName' in df.columns and 'TableName' in df.columns:
+        if 'DataBaseName' in df.columns and 'TableName' in df.columns:
             if 'ColumnName' in df.columns:
                 df['DDL_Statement'] = (
-                    'ALTER TABLE ' + df['DatabaseName'].astype(str) + '.' +
+                    'ALTER TABLE ' + df['DataBaseName'].astype(str) + '.' +
                     df['TableName'].astype(str) + ' ADD ' +
                     df['ColumnName'].astype(str) + ' COMPRESS;'
                 )
             else:
                 df['DDL_Statement'] = (
-                    'ALTER TABLE ' + df['DatabaseName'].astype(str) + '.' +
+                    'ALTER TABLE ' + df['DataBaseName'].astype(str) + '.' +
                     df['TableName'].astype(str) + ' ADD COMPRESS;'
                 )
             df['DDL_Action'] = 'ADD COMPRESS'
