@@ -204,6 +204,37 @@ def initialize_session_state():
 
 
 # ---------------------------------------------------------------------------
+# Column normalisation helper
+# ---------------------------------------------------------------------------
+
+_COLUMN_ALIASES = {
+    'DatabaseName': 'DataBaseName',
+    'databasename': 'DataBaseName',
+    'DATABASENAME': 'DataBaseName',
+    'Tablename': 'TableName',
+    'tablename': 'TableName',
+    'TABLENAME': 'TableName',
+}
+
+
+def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Rename common Teradata column-case variants to canonical names."""
+    rename_map = {old: new for old, new in _COLUMN_ALIASES.items() if old in df.columns}
+    if rename_map:
+        df = df.rename(columns=rename_map)
+    return df
+
+
+def _has_required_columns(df: pd.DataFrame, required: list, view_name: str) -> bool:
+    """Return True if all required columns exist; otherwise render a warning."""
+    missing = [c for c in required if c not in df.columns]
+    if missing:
+        st.warning(f"No data available for {view_name}. Missing columns: {', '.join(missing)}")
+        return False
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Dashboard renderers (one per component)
 # ---------------------------------------------------------------------------
 
@@ -211,6 +242,9 @@ def render_01_cds_report(df: pd.DataFrame):
     """CDS Report: gauge + progress bar + metrics + alerts."""
     if df.empty:
         st.info("Sin datos para CDS Report")
+        return
+    df = _normalise_columns(df)
+    if not _has_required_columns(df, ['Parameter', 'Value'], 'CDS Report'):
         return
 
     df['Value'] = pd.to_numeric(df['Value'], errors='coerce').fillna(0)
@@ -278,7 +312,9 @@ def render_02_forecast(df: pd.DataFrame):
         st.info("Sin datos para Space Capacity Forecast")
         return
 
-    df = df.copy()
+    df = _normalise_columns(df.copy())
+    if not _has_required_columns(df, ['Month_Year', 'TotalMaxPerm_TB', 'TotalCurPerm_TB'], 'Space Capacity Forecast'):
+        return
     df['TotalMaxPerm_TB'] = pd.to_numeric(df['TotalMaxPerm_TB'], errors='coerce').fillna(0)
     df['TotalCurPerm_TB'] = pd.to_numeric(df['TotalCurPerm_TB'], errors='coerce').fillna(0)
     max_cap = df['TotalMaxPerm_TB'].max()
@@ -342,6 +378,9 @@ def render_03_unused_objects(df: pd.DataFrame):
     if df.empty:
         st.info("Sin datos para Unused Objects")
         return
+    df = _normalise_columns(df)
+    if not _has_required_columns(df, ['DataBaseName', 'TableName', 'Size_GB'], 'Unused Objects'):
+        return
 
     df['Size_GB'] = pd.to_numeric(df['Size_GB'], errors='coerce').fillna(0)
     total_gb = df['Size_GB'].sum()
@@ -403,6 +442,9 @@ def render_04_duplicate_objects(df: pd.DataFrame):
     if df.empty:
         st.info("Sin datos para Duplicate Objects")
         return
+    df = _normalise_columns(df)
+    if not _has_required_columns(df, ['DataBaseName', 'TableName', 'Size_GB'], 'Duplicate Objects'):
+        return
 
     df['Size_GB'] = pd.to_numeric(df['Size_GB'], errors='coerce').fillna(0)
 
@@ -426,6 +468,9 @@ def render_05_06_mvc(df: pd.DataFrame, component_label: str):
     """MVC Opportunities: bar chart + metric + DDL table."""
     if df.empty:
         st.info(f"Sin datos para {component_label}")
+        return
+    df = _normalise_columns(df)
+    if not _has_required_columns(df, ['DataBaseName', 'TableName'], component_label):
         return
 
     has_size = 'Size_GB' in df.columns
@@ -471,7 +516,9 @@ def render_07_top_databases(df: pd.DataFrame):
         st.info("Sin datos para Top 20 Databases")
         return
 
-    df = df.copy()
+    df = _normalise_columns(df.copy())
+    if not _has_required_columns(df, ['DataBaseName'], 'Top 20 Databases'):
+        return
     # Force numeric types on all metric columns
     for col in ['Total_Size_GB', 'Net_Data_GB', 'CurrentPerm_GB', 'MaxPerm_GB', 'Free_GB', 'Effective_Pct_Used']:
         if col in df.columns:
@@ -546,6 +593,9 @@ def render_08_top_tables(df: pd.DataFrame):
     if df.empty:
         st.info("Sin datos para Top 20 Tables")
         return
+    df = _normalise_columns(df)
+    if not _has_required_columns(df, ['TableName', 'Total_Size_GB', 'Skew_Pct'], 'Top 20 Tables'):
+        return
 
     df['Total_Size_GB'] = pd.to_numeric(df['Total_Size_GB'], errors='coerce').fillna(0)
     df['Skew_Pct'] = pd.to_numeric(df['Skew_Pct'], errors='coerce').fillna(0)
@@ -567,7 +617,9 @@ def render_09_unused_databases(df: pd.DataFrame):
         st.info("Sin datos para Unused Databases")
         return
 
-    df = df.copy()
+    df = _normalise_columns(df.copy())
+    if not _has_required_columns(df, ['DataBaseName'], 'Unused Databases'):
+        return
     for col in ['Total_Size_GB', 'CurrentPerm_GB', 'Days_Unused', 'Object_Count']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -611,7 +663,9 @@ def render_10_monthly_snapshot(df: pd.DataFrame):
         st.info("Sin datos para Monthly Capacity Snapshot")
         return
 
-    df = df.copy()
+    df = _normalise_columns(df.copy())
+    if not _has_required_columns(df, ['Mes_Snapshot'], 'Monthly Capacity Snapshot'):
+        return
     for col in ['Spool_TB', 'Temp_TB', 'CurrentPerm_TB', 'PeakPerm_TB']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
@@ -673,7 +727,9 @@ def render_11_space_utilization(df: pd.DataFrame):
         st.info("Sin datos para Database Space Utilization")
         return
 
-    df = df.copy()
+    df = _normalise_columns(df.copy())
+    if not _has_required_columns(df, ['DataBaseName', 'MaxPerm_GB', 'CurrentPerm_GB', 'Global_Util_Pct'], 'Database Space Utilization'):
+        return
     for col in ['MaxPerm_GB', 'CurrentPerm_GB', 'Effective_Space_GB', 'Global_Util_Pct', 'Effective_Util_Pct', 'Skew_Pct']:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
