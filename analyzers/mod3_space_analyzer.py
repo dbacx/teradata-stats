@@ -14,8 +14,8 @@ from core.config import THRESHOLDS
 logger = logging.getLogger(__name__)
 
 COMPONENT_SEVERITY = {
-    '01_Database_Space_Utilization': 'CRITICAL',
-    '02_Space_Capacity_Forecast_Report': 'CRITICAL',
+    '01_CDS_Report': 'CRITICAL',
+    '02_Space_Capacity_Forecast': 'CRITICAL',
     '03_Suspected_Unused_Objects': 'HIGH',
     '04_Suspected_Duplicate_Objects': 'HIGH',
     '05_MVC_Opportunities_Uncompressed_Tables': 'MEDIUM',
@@ -23,11 +23,13 @@ COMPONENT_SEVERITY = {
     '07_Top_20_Databases_By_Used_Size': 'INFO',
     '08_Top_20_Tables_By_Size': 'INFO',
     '09_Top_20_Unused_Databases_By_Size': 'HIGH',
+    '10_Monthly_Capacity_ Snapshot': 'MEDIUM',
+    '11_Database_Space_Utilization': 'CRITICAL',
 }
 
 COMPONENT_LABELS = {
-    '01_Database_Space_Utilization': 'Database Space Utilization',
-    '02_Space_Capacity_Forecast_Report': 'Space Capacity Forecast',
+    '01_CDS_Report': 'CDS Report',
+    '02_Space_Capacity_Forecast': 'Space Capacity Forecast',
     '03_Suspected_Unused_Objects': 'Suspected Unused Objects',
     '04_Suspected_Duplicate_Objects': 'Suspected Duplicate Objects',
     '05_MVC_Opportunities_Uncompressed_Tables': 'MVC Uncompressed Tables',
@@ -35,25 +37,20 @@ COMPONENT_LABELS = {
     '07_Top_20_Databases_By_Used_Size': 'Top 20 Databases By Size',
     '08_Top_20_Tables_By_Size': 'Top 20 Tables By Size',
     '09_Top_20_Unused_Databases_By_Size': 'Top 20 Unused Databases',
+    '10_Monthly_Capacity_ Snapshot': 'Monthly Capacity Snapshot',
+    '11_Database_Space_Utilization': 'Database Space Utilization',
 }
 
-DDL_COLUMNS = ['Action_SQL', 'DDL_Statement', 'DDL_Action', 'Diagnostico']
+DDL_COLUMNS = ['Action_SQL', 'DDL_Statement', 'DDL_Action', 'Diagnostico', 'RemediationDDL']
 
 
 class SpaceAnalyzer(BaseAnalyzer):
     """
     Analyzer for Space Assessment Module (Module 3).
     
-    Analyzes data from 9 components to identify space issues:
-    1. Database Space Utilization - AMP-aware space usage
-    2. Space Capacity Forecast - Growth projection to 95%
-    3. Suspected Unused Objects - Tables with zero access in 30 days
-    4. Suspected Duplicate Objects - Backup/temp table heuristics
-    5. MVC Uncompressed Tables - Large tables with zero compression
-    6. MVC Compressed Tables - Partially compressed tables with low-hanging fruit
-    7. Top 20 Databases By Used Size - Executive summary
-    8. Top 20 Tables By Size - Largest tables with skew
-    9. Top 20 Unused Databases By Size - Cold storage candidates
+    Analyzes data from 11 components to identify space issues,
+    generates DDL remediation statements, and enforces CDS validation
+    (CDS consumed must be <= Perm capacity).
     """
     
     def __init__(self):
@@ -90,7 +87,7 @@ class SpaceAnalyzer(BaseAnalyzer):
     
     def _analyze_component(self, df: pd.DataFrame, component_key: str, severity: str) -> pd.DataFrame:
         """
-        Generic analysis: inject Severity column and register findings.
+        Analyze a component: inject Severity, generate DDL, validate CDS rule.
         """
         if df.empty:
             logger.warning(f"DataFrame is empty for {component_key}")
@@ -98,6 +95,16 @@ class SpaceAnalyzer(BaseAnalyzer):
         
         result_df = df.copy()
         result_df['Severity'] = severity
+        
+        if component_key == '01_CDS_Report':
+            result_df = self._validate_cds(result_df)
+        elif component_key == '03_Suspected_Unused_Objects':
+            result_df = self._generate_drop_ddl(result_df)
+        elif component_key == '04_Suspected_Duplicate_Objects':
+            result_df = self._generate_duplicate_ddl(result_df)
+        elif component_key in ('05_MVC_Opportunities_Uncompressed_Tables',
+                               '06_MVC_Opportunities_Compressed_Tables'):
+            result_df = self._generate_compress_ddl(result_df)
         
         label = COMPONENT_LABELS.get(component_key, component_key)
         severity_enum = getattr(Severity, severity, Severity.INFO)
@@ -110,6 +117,59 @@ class SpaceAnalyzer(BaseAnalyzer):
         )
         
         return result_df
+    
+    def _validate_cds(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        CDS validation: CDS consumed must be <= Perm capacity.
+        Adds CDS_Validation column.
+        """
+        if 'Parameter' in df.columns and 'Value' in df.columns:
+            params = dict(zip(df['Parameter'].str.strip(), df['Value']))
+            cds_consumed = params.get('04. CDS Consumed (TB)', 0)
+            current_perm = params.get('01. CurrentPerm (TB)', 0)
+            try:
+                cds_consumed = float(cds_consumed)
+                current_perm = float(current_perm)
+            except (ValueError, TypeError):
+                cds_consumed = 0.0
+                current_perm = 0.0
+            if cds_consumed > current_perm and current_perm > 0:
+                logger.warning(f"CDS validation failed: CDS({cds_consumed} TB) > Perm({current_perm} TB)")
+                df['CDS_Validation'] = 'FAIL: CDS > Perm'
+            else:
+                df['CDS_Validation'] = 'PASS'
+        return df
+    
+    def _generate_drop_ddl(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Generate DROP TABLE DDL for unused objects."""
+        if 'DatabaseName' in df.columns and 'TableName' in df.columns:
+            df['DDL_Statement'] = 'DROP TABLE ' + df['DatabaseName'].astype(str) + '.' + df['TableName'].astype(str) + ';'
+            df['DDL_Action'] = 'DROP TABLE'
+        return df
+    
+    def _generate_duplicate_ddl(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Generate DROP TABLE DDL for suspected duplicate objects."""
+        if 'DatabaseName' in df.columns and 'TableName' in df.columns:
+            df['DDL_Statement'] = 'DROP TABLE ' + df['DatabaseName'].astype(str) + '.' + df['TableName'].astype(str) + ';'
+            df['DDL_Action'] = 'DROP TABLE'
+        return df
+    
+    def _generate_compress_ddl(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Generate ALTER TABLE ADD COMPRESS DDL for MVC opportunities."""
+        if 'DatabaseName' in df.columns and 'TableName' in df.columns:
+            if 'ColumnName' in df.columns:
+                df['DDL_Statement'] = (
+                    'ALTER TABLE ' + df['DatabaseName'].astype(str) + '.' +
+                    df['TableName'].astype(str) + ' ADD ' +
+                    df['ColumnName'].astype(str) + ' COMPRESS;'
+                )
+            else:
+                df['DDL_Statement'] = (
+                    'ALTER TABLE ' + df['DatabaseName'].astype(str) + '.' +
+                    df['TableName'].astype(str) + ' ADD COMPRESS;'
+                )
+            df['DDL_Action'] = 'ADD COMPRESS'
+        return df
     
     def get_severity_summary(self) -> Dict[str, int]:
         """Return count of findings per severity level."""

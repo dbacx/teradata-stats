@@ -18,37 +18,41 @@ class SpaceCollector(BaseCollector):
     """
     Collector for Space Assessment Module (Module 3).
     
-    Executes 9 SQL queries to analyze space usage across the Teradata system:
-    1. Database Space Utilization (AMP-Aware)
-    2. Space Capacity Forecast Report
-    3. Suspected Unused Objects
-    4. Suspected Duplicate Objects
-    5. MVC Opportunities - Uncompressed Tables
-    6. MVC Opportunities - Compressed Tables
-    7. Top 20 Databases By Used Size
-    8. Top 20 Tables By Size
-    9. Top 20 Unused Databases By Size
+    Executes 11 SQL queries to analyze space usage across the Teradata system:
+     1. CDS Report (Customer Data Space)
+     2. Space Capacity Forecast (Historical Baseline)
+     3. Suspected Unused Objects
+     4. Suspected Duplicate Objects
+     5. MVC Opportunities - Uncompressed Tables
+     6. MVC Opportunities - Compressed Tables
+     7. Top 20 Databases By Used Size
+     8. Top 20 Tables By Size
+     9. Top 20 Unused Databases By Size
+    10. Monthly Capacity Snapshot
+    11. Database Space Utilization (AMP-Aware)
     """
     
     def __init__(self):
         """Initialize the Space Collector."""
         super().__init__(module_name='module_3_space')
         self.sql_files = [
-            '01_Database_Space_Utilization.sql',
-            '02_Space_Capacity_Forecast_Report.sql',
+            '01_CDS_Report.sql',
+            '02_Space_Capacity_Forecast.sql',
             '03_Suspected_Unused_Objects.sql',
             '04_Suspected_Duplicate_Objects.sql',
             '05_MVC_Opportunities_Uncompressed_Tables.sql',
             '06_MVC_Opportunities_Compressed_Tables.sql',
             '07_Top_20_Databases_By_Used_Size.sql',
             '08_Top_20_Tables_By_Size.sql',
-            '09_Top_20_Unused_Databases_By_Size.sql'
+            '09_Top_20_Unused_Databases_By_Size.sql',
+            '10_Monthly_Capacity_ Snapshot.sql',
+            '11_Database_Space_Utilization.sql',
         ]
         logger.info(f"Initialized SpaceCollector with {len(self.sql_files)} SQL files")
     
     def collect(self, connection, params: Optional[Dict[str, Any]] = None) -> Dict[str, pd.DataFrame]:
         """
-        Collect data from all 9 SQL components.
+        Collect data from all 11 SQL components.
         
         Args:
             connection: Teradata connection object
@@ -95,7 +99,7 @@ class SpaceCollector(BaseCollector):
         
         Args:
             connection: Teradata connection object
-            component_name: Name of the component (e.g., '01_Database_Space_Utilization')
+            component_name: Name of the component (e.g., '01_CDS_Report')
             params: Optional dictionary of parameters for placeholder replacement
         
         Returns:
