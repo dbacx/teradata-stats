@@ -34,7 +34,9 @@ INNER JOIN DBC.TableSizeV ts
 WHERE c.Compressible <> 'C'
   AND c.ColumnType IN ('DA', 'I1', 'CF') 
   AND c.ColumnLength = 1 -- Específico para CHAR(1)
-  AND c.DatabaseName NOT IN ('DBC', 'PDCRDATA', 'SYSDBA')
+  AND c.DatabaseName NOT IN (
+    'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT','TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM','LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR','TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA', 'PDCRSTG','SYSDBA','CONSOLE','MLDB','PDCRADMIN','SYSUDTLIB','TD_SYSFNLIB','TDAAS_DB','baradmin','BARUSERS','Crashdumps','External_AP','lab1canales','labs_group_lab','LockLogShredder','PDCRADM','PDCRINFO','SYSJDBC','SYSUIF','TD_SYSGPL','TD_SYSXML'
+	)
 GROUP BY 1, 2, 3, 4
 HAVING SUM(ts.CurrentPerm) > 5368709120 -- Solo tablas pesadas > 5GB
 ORDER BY 1, 2;

@@ -31,5 +31,7 @@ INNER JOIN Compresion_Status cs
     ON tf.DatabaseName = cs.DatabaseName
     AND tf.TableName = cs.TableName
 WHERE cs.Compressed_Columns = 0
-  AND tf.DatabaseName NOT IN ('DBC', 'PDCRDATA', 'SYSDBA')
+  AND tf.DatabaseName NOT IN (
+    'DBC','DBCMNGR','SYSLIB','TDQCD','TDSTATS','TDMAPS','TDBCMGMT','TD_SERVER_DB','VAL','SYSTEMFE','SYSSPATIAL','VIEWPOINT','TDWM','LOCKLOGLSHREDDER','SQLJ','SYSBAR','SYSADMIN','SYS_CALENDAR','TD_ANALYTICS_DB','PDCRTPCD','PDCRDATA', 'PDCRSTG','SYSDBA','CONSOLE','MLDB','PDCRADMIN','SYSUDTLIB','TD_SYSFNLIB','TDAAS_DB','baradmin','BARUSERS','Crashdumps','External_AP','lab1canales','labs_group_lab','LockLogShredder','PDCRADM','PDCRINFO','SYSJDBC','SYSUIF','TD_SYSGPL','TD_SYSXML'
+	)
 ORDER BY Size_GB DESC;
