@@ -112,6 +112,30 @@ def get_global_css():
     [data-testid="StyledLinkIconContainer"] {
         display: none !important;
     }
+
+    /* 9. Sidebar nav — bold dark module names */
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div p {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        color: #1C1C1E !important;
+        letter-spacing: 0.01em;
+    }
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a:hover div p {
+        color: #F37021 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] div p {
+        color: #F37021 !important;
+        font-weight: 700 !important;
+    }
+    /* 10. Section label MODULOS — uppercase small caps */
+    [data-testid="stSidebar"] .st-emotion-cache-1cypcdb,
+    [data-testid="stSidebar"] [data-testid="stSidebarNavSeparator"] + div span {
+        font-size: 0.7rem !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.12em !important;
+        color: #888 !important;
+        text-transform: uppercase !important;
+    }
 </style>
 """
 
