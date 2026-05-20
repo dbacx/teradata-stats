@@ -147,6 +147,7 @@ def main():
         if not df.empty:
             st.markdown("## Resultados del Análisis")
 
+<<<<<<< HEAD
             # ── METRIC CARD DISPLAY ──────────────────────────────────────
             METRIC_CONFIG = [
                 ("NodeType",        "memory",                   "Versión / Tipo de Nodo",   "Sistema"),
@@ -205,10 +206,143 @@ def main():
                 letter-spacing: 0.06em;
                 color: #F37021;
                 margin-top: 0.2rem;
+=======
+            # ── TERADATA CORPORATE DASHBOARD ─────────────────────────────
+
+            row = df.iloc[0]
+
+            def val(col, default="—"):
+                v = row.get(col, default)
+                if v is None or str(v).strip() == "":
+                    return default
+                try:
+                    n = float(str(v).replace(",", ""))
+                    if n >= 1000:
+                        return f"{n:,.0f}"
+                except Exception:
+                    pass
+                return str(v)
+
+            st.markdown("""
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=block" rel="stylesheet"/>
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0&display=block" rel="stylesheet"/>
+            <style>
+            .td-dash * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+            .td-dash { width: 100%; padding: 0.5rem 0 1.5rem 0; }
+            .td-top-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1rem;
+                margin-bottom: 1.4rem;
+            }
+            .td-info-card {
+                background: #ffffff;
+                border: 1.5px solid #e2e8f0;
+                border-top: 3px solid #F37021;
+                border-radius: 10px;
+                padding: 1rem 1.1rem;
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            .td-info-card .td-icon {
+                font-family: 'Material Symbols Outlined';
+                font-size: 1.8rem;
+                color: #F37021;
+                flex-shrink: 0;
+                line-height: 1;
+                margin-top: 2px;
+            }
+            .td-info-card .td-ic-label {
+                font-size: 0.68rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #6b7280;
+                margin-bottom: 0.2rem;
+            }
+            .td-info-card .td-ic-value {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #00233C;
+                line-height: 1.2;
+            }
+            .td-body-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 1.1rem;
+            }
+            .td-panel {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            .td-panel-header {
+                background: #00233C;
+                padding: 0.65rem 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .td-panel-header .td-ph-icon {
+                font-family: 'Material Symbols Outlined';
+                font-size: 1.1rem;
+                color: #F37021;
+                line-height: 1;
+            }
+            .td-panel-header .td-ph-title {
+                font-size: 0.78rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: #ffffff;
+            }
+            .td-panel-body {
+                padding: 0.85rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.65rem;
+            }
+            .td-kpi {
+                background: #ffffff;
+                border: 1px solid #e9edf2;
+                border-radius: 8px;
+                padding: 0.75rem 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            .td-kpi .td-kpi-icon {
+                font-family: 'Material Symbols Outlined';
+                font-size: 1.5rem;
+                color: #F37021;
+                flex-shrink: 0;
+                line-height: 1;
+            }
+            .td-kpi .td-kpi-label {
+                font-size: 0.65rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.07em;
+                color: #9ca3af;
+                line-height: 1;
+                margin-bottom: 0.25rem;
+            }
+            .td-kpi .td-kpi-value {
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: #00233C;
+                line-height: 1.1;
+            }
+            @media (max-width: 900px) {
+                .td-top-row, .td-body-row { grid-template-columns: 1fr; }
+>>>>>>> origin/devin/1779316863-sysinfo-corporate-dashboard
             }
             </style>
             """, unsafe_allow_html=True)
 
+<<<<<<< HEAD
             row = df.iloc[0] if not df.empty else {}
             cards_html = '<div class="td-metric-grid">'
             for col, icon, label, category in METRIC_CONFIG:
@@ -239,6 +373,140 @@ def main():
 
             cards_html += '</div>'
             st.markdown(cards_html, unsafe_allow_html=True)
+=======
+            html = f"""
+            <div class="td-dash">
+              <div class="td-top-row">
+                <div class="td-info-card">
+                  <span class="td-icon">info</span>
+                  <div>
+                    <div class="td-ic-label">Teradata Version</div>
+                    <div class="td-ic-value">{val('VERSION')}</div>
+                  </div>
+                </div>
+                <div class="td-info-card">
+                  <span class="td-icon">dns</span>
+                  <div>
+                    <div class="td-ic-label">Instance Type (Node)</div>
+                    <div class="td-ic-value">{val('NodeType')}</div>
+                  </div>
+                </div>
+                <div class="td-info-card">
+                  <span class="td-icon">calendar_today</span>
+                  <div>
+                    <div class="td-ic-label">Logdate</div>
+                    <div class="td-ic-value">{val('Logdate')}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="td-body-row">
+                <div class="td-panel">
+                  <div class="td-panel-header">
+                    <span class="td-ph-icon">hub</span>
+                    <span class="td-ph-title">Cluster Topology</span>
+                  </div>
+                  <div class="td-panel-body">
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">storage</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Nodes</div>
+                        <div class="td-kpi-value">{val('Nodes')}</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">settings_input_component</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Total AMPs</div>
+                        <div class="td-kpi-value">{val('AMPs')}</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">memory</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Total PEs</div>
+                        <div class="td-kpi-value">{val('PEs')}</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">router</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Gateways</div>
+                        <div class="td-kpi-value">{val('Gateways')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="td-panel">
+                  <div class="td-panel-header">
+                    <span class="td-ph-icon">speed</span>
+                    <span class="td-ph-title">Capacity &amp; Performance</span>
+                  </div>
+                  <div class="td-panel-body">
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">hard_drive</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Total System Space</div>
+                        <div class="td-kpi-value">{val('SystemSpace_TBs')} TB</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">sd_storage</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">AMP Space</div>
+                        <div class="td-kpi-value">{val('AMPSpace_GBs')} GB</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">bolt</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Compute Capacity (CPU Sec/Hr)</div>
+                        <div class="td-kpi-value">{val('CPUSec_Hr')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="td-panel">
+                  <div class="td-panel-header">
+                    <span class="td-ph-icon">developer_board</span>
+                    <span class="td-ph-title">Node Specifications</span>
+                  </div>
+                  <div class="td-panel-body">
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">memory_alt</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">Memoria por Nodo</div>
+                        <div class="td-kpi-value">{val('NodeMemSize_GBs')} GB</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">cpu</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">CPUs por Nodo</div>
+                        <div class="td-kpi-value">{val('NodeCPUs')}</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">account_tree</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">AMPs por Nodo</div>
+                        <div class="td-kpi-value">{val('NodeAMPs')}</div>
+                      </div>
+                    </div>
+                    <div class="td-kpi">
+                      <span class="td-kpi-icon">sync_alt</span>
+                      <div class="td-kpi-text">
+                        <div class="td-kpi-label">PEs por Nodo</div>
+                        <div class="td-kpi-value">{val('NodePEs')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            """
+
+            st.markdown(html, unsafe_allow_html=True)
+>>>>>>> origin/devin/1779316863-sysinfo-corporate-dashboard
 
             # Download button
             csv = df.to_csv(index=False)
