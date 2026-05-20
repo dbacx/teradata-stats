@@ -20,7 +20,8 @@ from collectors.mod8_cleanup_collector import CleanupCollector
 from analyzers.mod8_cleanup_analyzer import CleanupAnalyzer
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

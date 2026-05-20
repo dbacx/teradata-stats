@@ -20,7 +20,8 @@ from collectors.mod6_schema_collector import SchemaCollector
 from analyzers.mod6_schema_analyzer import SchemaAnalyzer
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

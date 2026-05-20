@@ -18,10 +18,8 @@ from analyzers.health_rules import StatsAnalyzer
 from skills.recommender import DDLRecommender
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 
