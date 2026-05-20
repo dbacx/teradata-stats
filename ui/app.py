@@ -1,10 +1,11 @@
 """
-TD Stats Optimizer - Streamlit Web Interface
+VantageOps - Teradata Assessment Suite
 
-This module provides a user-friendly web interface for analyzing and optimizing
-Teradata database statistics using the core framework components with the new
-RulesEngine architecture.
+This module serves as the primary entry point for the observability and auditing platform.
+It provides an enterprise-grade web interface to evaluate cluster health, manage database
+statistics, and generate actionable remediation insights for Managed Services and Data Platform operations.
 """
+
 
 import streamlit as st
 import pandas as pd
