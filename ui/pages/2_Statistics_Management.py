@@ -361,14 +361,6 @@ def main():
         help="Estadísticas más antiguas que este número de días se considerarán desactualizadas"
     )
     
-    max_value_length = st.sidebar.slider(
-        "Umbral MaxValueLength para Multicolumn",
-        min_value=10,
-        max_value=50,
-        value=25,
-        help="Valor máximo para considerar un problema de MaxValueLength"
-    )
-    
     # Execute Analysis Button
     if st.sidebar.button("Ejecutar", type="primary"):
         try:
@@ -383,7 +375,7 @@ def main():
                 collector = StatsCollector()
                 params = {
                     'stale_days_threshold': stale_days,
-                    'max_value_length_threshold': max_value_length
+                    'max_value_length_threshold': 25
                 }
                 collected_data = collector.collect(connection, params=params)
                 st.session_state.mod2_collected_data = collected_data
