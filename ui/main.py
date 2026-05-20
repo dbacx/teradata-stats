@@ -137,11 +137,11 @@ pg_statistics = st.Page("pages/2_Statistics_Management.py", title="Statistics Ma
 
 # Create navigation with grouped sections
 pages = {
-    "": [pg_home],
     "MODULOS": [
+        pg_home,           # Home
         pg_dbinfo,         # 1
         pg_statistics,     # 2
-        pg_space,          # 3
+#        pg_space,          # 3
 #        pg_dbql,           # 4
 #        pg_performance,    # 5
 #        pg_schema,         # 6
