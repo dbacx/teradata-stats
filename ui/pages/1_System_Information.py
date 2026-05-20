@@ -146,10 +146,100 @@ def main():
         
         if not df.empty:
             st.markdown("## Resultados del Análisis")
-            
-            # Single consolidated table
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            
+
+            # ── METRIC CARD DISPLAY ──────────────────────────────────────
+            METRIC_CONFIG = [
+                ("NodeType",        "memory",                   "Versión / Tipo de Nodo",   "Sistema"),
+                ("Logdate",         "calendar_today",           "Fecha de Registro",        "Fecha"),
+                ("Nodes",           "device_hub",               "Nodos",                    "Infraestructura"),
+                ("AMPs",            "settings_input_component", "AMPs Totales",             "Procesamiento"),
+                ("NodeAMPs",        "calculate",                "AMPs por Nodo",            "Procesamiento"),
+                ("PEs",             "sync_alt",                 "Parsing Engines (PEs)",    "Procesamiento"),
+                ("Gateways",        "router",                   "Gateways",                 "Red"),
+                ("SystemSpace_TBs", "storage",                  "Espacio del Sistema (TB)", "Almacenamiento"),
+                ("AMPSpace_GBs",    "sd_storage",               "Espacio por AMP (GB)",     "Almacenamiento"),
+                ("CPUSec_Hr",       "speed",                    "CPU Seg/Hora",             "Rendimiento"),
+            ]
+            known_cols = {c[0] for c in METRIC_CONFIG}
+
+            st.markdown("""
+            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0&display=block" rel="stylesheet" />
+            <style>
+            .td-metric-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1.2rem;
+                margin-top: 1rem;
+            }
+            .td-metric-card {
+                background: #ffffff;
+                border: 1px solid #e8e8e8;
+                border-radius: 12px;
+                padding: 1.2rem 1rem 1rem 1rem;
+                display: flex;
+                flex-direction: column;
+                gap: 0.4rem;
+            }
+            .td-metric-card .td-icon {
+                font-family: 'Material Symbols Outlined';
+                font-size: 2rem;
+                color: #F37021;
+                line-height: 1;
+            }
+            .td-metric-card .td-value {
+                font-size: 1.6rem;
+                font-weight: 600;
+                color: #1C1C1E;
+                line-height: 1.2;
+                word-break: break-all;
+            }
+            .td-metric-card .td-label {
+                font-size: 0.78rem;
+                color: #6b6b6b;
+                line-height: 1.3;
+            }
+            .td-metric-card .td-category {
+                font-size: 0.68rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: #F37021;
+                margin-top: 0.2rem;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
+            row = df.iloc[0] if not df.empty else {}
+            cards_html = '<div class="td-metric-grid">'
+            for col, icon, label, category in METRIC_CONFIG:
+                if col in df.columns:
+                    value = row.get(col, "—")
+                    if value is None or str(value).strip() == "":
+                        value = "—"
+                    cards_html += f"""
+                    <div class="td-metric-card">
+                        <span class="td-icon">{icon}</span>
+                        <div class="td-value">{value}</div>
+                        <div class="td-label">{label}</div>
+                        <div class="td-category">{category}</div>
+                    </div>"""
+
+            for col in df.columns:
+                if col not in known_cols:
+                    value = row.get(col, "—")
+                    if value is None or str(value).strip() == "":
+                        value = "—"
+                    cards_html += f"""
+                    <div class="td-metric-card">
+                        <span class="td-icon">info</span>
+                        <div class="td-value">{value}</div>
+                        <div class="td-label">{col}</div>
+                        <div class="td-category">Otros</div>
+                    </div>"""
+
+            cards_html += '</div>'
+            st.markdown(cards_html, unsafe_allow_html=True)
+
             # Download button
             csv = df.to_csv(index=False)
             st.download_button(
