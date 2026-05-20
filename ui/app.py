@@ -25,8 +25,7 @@ from analyzers.rules.rule_02_sample import Rule02Sample
 from analyzers.rules.rule_06_stale import Rule06Stale
 from analyzers.rules.rule_15_bloat import Rule15Bloat
 from skills.recommender import DDLRecommender
-from skills.reporter import ExcelReporter
-from skills.ppt_reporter import PPTReporter
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -300,64 +299,7 @@ Para más información sobre soluciones Teradata, visite el [Sitio Web Oficial d
             else:
                 st.info("No hay recomendaciones DDL disponibles")
         
-        # Excel Download Section
-        st.markdown("---")
-        st.subheader("Exportar Reporte Completo")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            try:
-                reporter = ExcelReporter()
-                excel_bytes = reporter.generate_excel_with_ddl(
-                    results['rule_results'],
-                    st.session_state.ddl_recommendations
-                )
-                
-                if excel_bytes:
-                    database_name = st.session_state.last_database or 'Database'
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"TD_Stats_Opt_{database_name}_Report_{timestamp}.xlsx"
-                    
-                    st.download_button(
-                        label="Descargar Excel",
-                        data=excel_bytes,
-                        file_name=filename,
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        type="primary",
-                        help="Reporte detallado con todas las validaciones y DDL"
-                    )
-                else:
-                    st.warning("No se pudo generar el reporte Excel (sin datos disponibles)")
-            except Exception as e:
-                st.error(f"Error al generar reporte Excel: {str(e)}")
-                logger.error(f"Excel generation error: {str(e)}")
-        
-        with col2:
-            try:
-                ppt_reporter = PPTReporter()
-                ppt_bytes = ppt_reporter.generate_ppt_bytes(results)
-                
-                if ppt_bytes:
-                    database_name = st.session_state.last_database or 'Database'
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    filename = f"TD_Stats_Opt_{database_name}_Executive_{timestamp}.pptx"
-                    
-                    st.download_button(
-                        label="Descargar PPT Ejecutivo",
-                        data=ppt_bytes,
-                        file_name=filename,
-                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                        type="primary",
-                        help="Reporte ejecutivo con resumen de hallazgos"
-                    )
-                else:
-                    st.warning("No se pudo generar el reporte PPT (sin datos disponibles)")
-            except Exception as e:
-                st.error(f"Error al generar reporte PPT: {str(e)}")
-                logger.error(f"PPT generation error: {str(e)}")
-        
-        st.info("El reporte Excel incluye todas las validaciones ejecutadas y las recomendaciones DDL. El reporte PPT es un resumen ejecutivo.")
+
     
     # Footer
     st.markdown(
