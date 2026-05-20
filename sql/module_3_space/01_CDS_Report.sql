@@ -13,8 +13,8 @@
 --               CDS_CAPACITY_TB is a single point of change at the top.
 -- =============================================================================
 
+
 WITH CDS_Config AS (
-    -- *** Ajustar aqui la capacidad contratada en TB ***
     SELECT 20.0 AS CDS_Capacity_TB
 ),
 AggregatedData AS (
@@ -25,7 +25,7 @@ AggregatedData AS (
     FROM DBC.CDSTablesizeV
 ),
 Parameters AS (
-    SELECT '01. CurrentPerm (TB)'       AS Parameter, a.CurrentPerm_TB                                    AS Value FROM AggregatedData a CROSS JOIN CDS_Config c
+    SELECT '01. CurrentPerm (TB)'       AS "Parameter", a.CurrentPerm_TB                                    AS "Value" FROM AggregatedData a CROSS JOIN CDS_Config c
     UNION ALL
     SELECT '02. NoFallback (TB)',        a.NoFallback_TB                                                   FROM AggregatedData a CROSS JOIN CDS_Config c
     UNION ALL
@@ -49,4 +49,4 @@ Parameters AS (
                                                    ELSE NULL END
                                          AS DECIMAL(6,2))                                                  FROM AggregatedData a CROSS JOIN CDS_Config c
 )
-SELECT * FROM Parameters ORDER BY Parameter;
+SELECT * FROM Parameters ORDER BY "Parameter";
