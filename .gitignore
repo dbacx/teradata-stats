@@ -193,8 +193,9 @@ raw_data/
 processed_data/
 
 # Logs
-logs/
-*.log
+logs/*.log
+logs/*.log.*
+!logs/.gitkeep
 
 # Temporary files
 temp/

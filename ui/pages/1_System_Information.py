@@ -26,7 +26,8 @@ from analyzers.mod1_health_analyzer import SystemInformationAnalyzer
 from utils.csv_logger import log_execution
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

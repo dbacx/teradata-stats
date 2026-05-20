@@ -20,7 +20,8 @@ from collectors.mod7_hardware_collector import HardwareCollector
 from analyzers.mod7_hardware_analyzer import HardwareAnalyzer
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

@@ -22,7 +22,8 @@ from analyzers.mod5_performance_analyzer import PerformanceAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

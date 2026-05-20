@@ -23,7 +23,9 @@ from collectors.mod3_space_collector import SpaceCollector
 from analyzers.mod3_space_analyzer import SpaceAnalyzer, COMPONENT_LABELS, COMPONENT_SEVERITY, DDL_COLUMNS
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

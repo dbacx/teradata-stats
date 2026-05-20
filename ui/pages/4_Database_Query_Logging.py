@@ -21,7 +21,8 @@ from analyzers.mod4_config_analyzer import ConfigAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

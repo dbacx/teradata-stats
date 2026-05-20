@@ -23,7 +23,8 @@ from analyzers.mod10_security_analyzer import SecurityAnalyzer
 from core.config import THRESHOLDS, SYSTEM_DATABASES
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+from core.logging_config import configure_logging
+configure_logging()
 logger = logging.getLogger(__name__)
 
 
