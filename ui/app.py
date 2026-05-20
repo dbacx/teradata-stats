@@ -39,31 +39,36 @@ def main_app():
     initialize_session_state()
     
     # Corporate Banner
-    st.image("https://placehold.co/1000x80/F0F2F6/000000?text=Managed+Services&font=Montserrat", use_container_width=True)
-    
-    # Corporate Welcome Section
-    st.title("Teradata DBA Services Framework")
     st.markdown("""
-    Este framework integral proporciona capacidades de auditoría de base de datos, optimización de estadísticas, 
-    gestión de espacio, evaluación de seguridad y recolección de datos para entornos Teradata.
-    
-    La herramienta permite a los administradores de bases de datos e ingenieros de datos:
-    - Analizar y optimizar estadísticas de base de datos para mejorar el rendimiento de consultas
-    - Monitorear y gestionar la utilización de espacio en base de datos
-    - Evaluar configuraciones de seguridad y patrones de acceso de usuarios
-    - Evaluar el registro de consultas y métricas de rendimiento
-    - Generar recomendaciones DDL accionables para remediación
-    
-    Para más información sobre soluciones Teradata, visite el [Sitio Web Oficial de Teradata](https://www.teradata.com/).
-    """)
-    st.markdown("---")
-    
-    # Copyright
-    st.markdown("""
-    <div style="text-align: center; font-size: 0.85rem; color: rgba(0,0,0,0.6); margin-top: 2rem;">
-        Copyright Teradata Corporation 2026
+    <div style="background-color: #F0F2F6; padding: 2rem 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0 0 0.25rem 0; color: #1C1C1E;">VantageOps</h2>
+        <p style="margin: 0; color: #555; font-size: 1rem;">Managed Services &mdash; Teradata DBA Optimization Suite</p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Corporate Welcome Section
+    st.markdown("## Teradata DBA Services Framework")
+    st.markdown("""
+Este framework integral proporciona capacidades de auditoría de base de datos, optimización de estadísticas,
+gestión de espacio, evaluación de seguridad y recolección de datos para entornos Teradata.
+
+La herramienta permite a los administradores de bases de datos e ingenieros de datos:
+- Analizar y optimizar estadísticas de base de datos para mejorar el rendimiento de consultas
+- Monitorear y gestionar la utilización de espacio en base de datos
+- Evaluar configuraciones de seguridad y patrones de acceso de usuarios
+- Evaluar el registro de consultas y métricas de rendimiento
+- Generar recomendaciones DDL accionables para remediación
+
+Para más información sobre soluciones Teradata, visite el [Sitio Web Oficial de Teradata](https://www.teradata.com/).
+""")
+    st.markdown("---")
+
+    # Copyright
+    st.markdown(
+        "<p style='text-align: center; font-size: 0.85rem; color: rgba(0,0,0,0.6); margin-top: 2rem;'>"
+        "Copyright Teradata Corporation 2026</p>",
+        unsafe_allow_html=True,
+    )
     
     # Sidebar configuration
     st.sidebar.header("Configuración")

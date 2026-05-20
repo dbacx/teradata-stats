@@ -76,15 +76,41 @@ def get_global_css():
         display: block !important;
     }
 
-    /* Estilo corporativo global para botones primarios (Teradata Orange) */
+    /* 4. Botones primarios — Teradata Orange oficial */
     [data-testid="baseButton-primary"] {
-        background-color: #FD6724 !important;
+        background-color: #F37021 !important;
         color: white !important;
-        border-color: #FD6724 !important;
+        border-color: #F37021 !important;
     }
     [data-testid="baseButton-primary"]:hover {
-        background-color: #e55a1d !important;
-        border-color: #e55a1d !important;
+        background-color: #d9621b !important;
+        border-color: #d9621b !important;
+    }
+
+    /* 5. Sidebar navigation — tipografía unificada */
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div {
+        font-size: 1.1rem !important;
+        font-weight: 500 !important;
+    }
+
+    /* 6. Tipografía global — párrafos y listas */
+    p, li {
+        font-size: 1rem !important;
+        line-height: 1.6 !important;
+        color: #333333 !important;
+    }
+
+    /* 7. Títulos — contraste fuerte */
+    h1, h2, h3 {
+        color: #1C1C1E !important;
+    }
+
+    /* 8. Ocultar iconos de anchor link en títulos */
+    [data-testid="stHeaderActionElements"],
+    .st-emotion-cache-10trblm a,
+    h1 a, h2 a, h3 a,
+    [data-testid="StyledLinkIconContainer"] {
+        display: none !important;
     }
 </style>
 """
