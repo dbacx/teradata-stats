@@ -1,3 +1,5 @@
+# DEPRECATED — Legacy module kept for backward compatibility with analyzers/rules/rule_16_urgent_missing.py.
+# New modules should use the modular collectors in collectors/mod*_collector.py instead.
 """
 DBQL Metadata Extractor for Teradata Statistics
 

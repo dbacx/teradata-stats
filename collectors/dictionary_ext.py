@@ -1,3 +1,5 @@
+# DEPRECATED — Legacy module kept for backward compatibility with ui/app.py and main_cli.py.
+# New modules should use the modular collectors in collectors/mod*_collector.py instead.
 """
 Dictionary Metadata Extractor for Teradata Statistics
 
