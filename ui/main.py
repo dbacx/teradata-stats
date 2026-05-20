@@ -141,8 +141,29 @@ if client is None:
     )
     st.stop()
 
-# 5. Sidebar logo
-st.logo("logo.jpg")
+# 5. Sidebar logo (custom HTML — no white background box)
+st.markdown("""
+<style>
+[data-testid="stSidebar"] > div:first-child {
+    padding-top: 1.5rem;
+}
+.td-logo-wrapper {
+    display: flex;
+    align-items: center;
+    padding: 0 1.2rem 1.2rem 1.2rem;
+}
+.td-logo-wrapper img {
+    width: 160px;
+    height: auto;
+    mix-blend-mode: multiply;
+    opacity: 0.92;
+    filter: drop-shadow(0px 0px 0px transparent);
+}
+</style>
+<div class="td-logo-wrapper">
+    <img src="app/static/logo.jpg" alt="teradata.">
+</div>
+""", unsafe_allow_html=True)
 
 # 6. Inject cached global CSS
 st.markdown(get_global_css(), unsafe_allow_html=True)
