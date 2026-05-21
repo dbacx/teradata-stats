@@ -62,7 +62,7 @@ def get_global_css():
     [data-testid="stSidebarCollapseButton"] span::after {
         content: "☰" !important;
         font-size: 1.2rem !important;
-        color: #333333 !important;
+        color: #1a2b38 !important;
         visibility: visible !important;
         display: block !important;
     }
@@ -71,20 +71,20 @@ def get_global_css():
     [data-testid="stExpanderToggleIcon"]::after {
         content: "▼" !important;
         font-size: 0.8rem !important;
-        color: #333333 !important;
+        color: #1a2b38 !important;
         visibility: visible !important;
         display: block !important;
     }
 
     /* 4. Botones primarios — Teradata Orange oficial */
     [data-testid="baseButton-primary"] {
-        background-color: #F37021 !important;
-        color: white !important;
-        border-color: #F37021 !important;
+        background-color: #FF5F02 !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        font-weight: 600 !important;
     }
     [data-testid="baseButton-primary"]:hover {
-        background-color: #d9621b !important;
-        border-color: #d9621b !important;
+        background-color: #cc4d00 !important;
     }
 
     /* 5. Sidebar navigation — tipografía unificada */
@@ -97,12 +97,12 @@ def get_global_css():
     p, li {
         font-size: 1rem !important;
         line-height: 1.6 !important;
-        color: #333333 !important;
+        color: #1a2b38 !important;
     }
 
     /* 7. Títulos — contraste fuerte */
     h1, h2, h3 {
-        color: #1C1C1E !important;
+        color: #00233C !important;
     }
 
     /* 8. Ocultar iconos de anchor link en títulos */
@@ -117,14 +117,14 @@ def get_global_css():
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div p {
         font-size: 1.05rem !important;
         font-weight: 700 !important;
-        color: #1C1C1E !important;
+        color: #00233C !important;
         letter-spacing: 0.01em;
     }
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a:hover div p {
-        color: #F37021 !important;
+        color: #FF5F02 !important;
     }
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] div p {
-        color: #F37021 !important;
+        color: #FF5F02 !important;
         font-weight: 700 !important;
     }
     /* 10. Section label MODULOS — uppercase small caps */

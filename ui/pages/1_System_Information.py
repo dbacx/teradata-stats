@@ -147,66 +147,6 @@ def main():
         if not df.empty:
             st.markdown("## Resultados del Análisis")
 
-<<<<<<< HEAD
-            # ── METRIC CARD DISPLAY ──────────────────────────────────────
-            METRIC_CONFIG = [
-                ("NodeType",        "memory",                   "Versión / Tipo de Nodo",   "Sistema"),
-                ("Logdate",         "calendar_today",           "Fecha de Registro",        "Fecha"),
-                ("Nodes",           "device_hub",               "Nodos",                    "Infraestructura"),
-                ("AMPs",            "settings_input_component", "AMPs Totales",             "Procesamiento"),
-                ("NodeAMPs",        "calculate",                "AMPs por Nodo",            "Procesamiento"),
-                ("PEs",             "sync_alt",                 "Parsing Engines (PEs)",    "Procesamiento"),
-                ("Gateways",        "router",                   "Gateways",                 "Red"),
-                ("SystemSpace_TBs", "storage",                  "Espacio del Sistema (TB)", "Almacenamiento"),
-                ("AMPSpace_GBs",    "sd_storage",               "Espacio por AMP (GB)",     "Almacenamiento"),
-                ("CPUSec_Hr",       "speed",                    "CPU Seg/Hora",             "Rendimiento"),
-            ]
-            known_cols = {c[0] for c in METRIC_CONFIG}
-
-            st.markdown("""
-            <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0&display=block" rel="stylesheet" />
-            <style>
-            .td-metric-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 1.2rem;
-                margin-top: 1rem;
-            }
-            .td-metric-card {
-                background: #ffffff;
-                border: 1px solid #e8e8e8;
-                border-radius: 12px;
-                padding: 1.2rem 1rem 1rem 1rem;
-                display: flex;
-                flex-direction: column;
-                gap: 0.4rem;
-            }
-            .td-metric-card .td-icon {
-                font-family: 'Material Symbols Outlined';
-                font-size: 2rem;
-                color: #F37021;
-                line-height: 1;
-            }
-            .td-metric-card .td-value {
-                font-size: 1.6rem;
-                font-weight: 600;
-                color: #1C1C1E;
-                line-height: 1.2;
-                word-break: break-all;
-            }
-            .td-metric-card .td-label {
-                font-size: 0.78rem;
-                color: #6b6b6b;
-                line-height: 1.3;
-            }
-            .td-metric-card .td-category {
-                font-size: 0.68rem;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                color: #F37021;
-                margin-top: 0.2rem;
-=======
             # ── TERADATA CORPORATE DASHBOARD ─────────────────────────────
 
             row = df.iloc[0]
@@ -223,6 +163,7 @@ def main():
                     pass
                 return str(v)
 
+            # Step 1: inject CSS separately (no f-string)
             st.markdown("""
             <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=block" rel="stylesheet"/>
             <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0&display=block" rel="stylesheet"/>
@@ -236,9 +177,9 @@ def main():
                 margin-bottom: 1.4rem;
             }
             .td-info-card {
-                background: #ffffff;
+                background: #FFFFFF;
                 border: 1.5px solid #e2e8f0;
-                border-top: 3px solid #F37021;
+                border-top: 3px solid #FF5F02;
                 border-radius: 10px;
                 padding: 1rem 1.1rem;
                 display: flex;
@@ -248,7 +189,7 @@ def main():
             .td-info-card .td-icon {
                 font-family: 'Material Symbols Outlined';
                 font-size: 1.8rem;
-                color: #F37021;
+                color: #FF5F02;
                 flex-shrink: 0;
                 line-height: 1;
                 margin-top: 2px;
@@ -273,7 +214,7 @@ def main():
                 gap: 1.1rem;
             }
             .td-panel {
-                background: #f8fafc;
+                background: #f0f4f8;
                 border: 1px solid #e2e8f0;
                 border-radius: 12px;
                 overflow: hidden;
@@ -288,7 +229,7 @@ def main():
             .td-panel-header .td-ph-icon {
                 font-family: 'Material Symbols Outlined';
                 font-size: 1.1rem;
-                color: #F37021;
+                color: #FF5F02;
                 line-height: 1;
             }
             .td-panel-header .td-ph-title {
@@ -296,7 +237,7 @@ def main():
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.1em;
-                color: #ffffff;
+                color: #FFFFFF;
             }
             .td-panel-body {
                 padding: 0.85rem;
@@ -305,7 +246,7 @@ def main():
                 gap: 0.65rem;
             }
             .td-kpi {
-                background: #ffffff;
+                background: #FFFFFF;
                 border: 1px solid #e9edf2;
                 border-radius: 8px;
                 padding: 0.75rem 0.9rem;
@@ -316,7 +257,7 @@ def main():
             .td-kpi .td-kpi-icon {
                 font-family: 'Material Symbols Outlined';
                 font-size: 1.5rem;
-                color: #F37021;
+                color: #FF5F02;
                 flex-shrink: 0;
                 line-height: 1;
             }
@@ -337,43 +278,11 @@ def main():
             }
             @media (max-width: 900px) {
                 .td-top-row, .td-body-row { grid-template-columns: 1fr; }
->>>>>>> origin/devin/1779316863-sysinfo-corporate-dashboard
             }
             </style>
             """, unsafe_allow_html=True)
 
-<<<<<<< HEAD
-            row = df.iloc[0] if not df.empty else {}
-            cards_html = '<div class="td-metric-grid">'
-            for col, icon, label, category in METRIC_CONFIG:
-                if col in df.columns:
-                    value = row.get(col, "—")
-                    if value is None or str(value).strip() == "":
-                        value = "—"
-                    cards_html += f"""
-                    <div class="td-metric-card">
-                        <span class="td-icon">{icon}</span>
-                        <div class="td-value">{value}</div>
-                        <div class="td-label">{label}</div>
-                        <div class="td-category">{category}</div>
-                    </div>"""
-
-            for col in df.columns:
-                if col not in known_cols:
-                    value = row.get(col, "—")
-                    if value is None or str(value).strip() == "":
-                        value = "—"
-                    cards_html += f"""
-                    <div class="td-metric-card">
-                        <span class="td-icon">info</span>
-                        <div class="td-value">{value}</div>
-                        <div class="td-label">{col}</div>
-                        <div class="td-category">Otros</div>
-                    </div>"""
-
-            cards_html += '</div>'
-            st.markdown(cards_html, unsafe_allow_html=True)
-=======
+            # Step 2: inject HTML with Python variables (f-string)
             html = f"""
             <div class="td-dash">
               <div class="td-top-row">
@@ -506,7 +415,6 @@ def main():
             """
 
             st.markdown(html, unsafe_allow_html=True)
->>>>>>> origin/devin/1779316863-sysinfo-corporate-dashboard
 
             # Download button
             csv = df.to_csv(index=False)
