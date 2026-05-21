@@ -37,10 +37,13 @@ def load_client_environment():
     if project_root not in sys.path:
         sys.path.append(project_root)
 
-    env_file = os.path.join(project_root, f"{args.client.upper()}.env")
+    client_name = args.client.upper()
+    env_file = os.path.join(project_root, "config", f"{client_name}.env")
+    if not os.path.exists(env_file):
+        env_file = os.path.join(project_root, f"{client_name}.env")
     if os.path.exists(env_file):
         load_dotenv(env_file, override=True)
-        return args.client.upper()
+        return client_name
     return None
 
 
