@@ -10,7 +10,10 @@ import logging
 import pandas as pd
 from typing import Dict, Any
 from analyzers.base_rule import BaseStatsRule
-from collectors.dbql_ext import extract_urgent_missing_stats
+try:
+    from collectors.dbql_ext import extract_urgent_missing_stats
+except ImportError:
+    extract_urgent_missing_stats = None
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +55,10 @@ class Rule16UrgentMissing(BaseStatsRule):
         self.log_analysis_start(context)
         
         try:
+            if extract_urgent_missing_stats is None:
+                logger.warning("dbql_ext module not available — skipping Rule16")
+                return pd.DataFrame()
+
             # Extract urgent missing stats from DBQL
             logger.info(f"Extracting urgent missing stats from DBQL (last {self.days_back} days)")
             urgent_df = extract_urgent_missing_stats(

@@ -1,4 +1,4 @@
-# DEPRECATED — Legacy module kept for backward compatibility with main_cli.py.
+# DEPRECATED — Legacy module kept for backward compatibility.
 # New modules should use the modular analyzers in analyzers/mod*_analyzer.py instead.
 """
 Health Rules Analyzer for Teradata Statistics

@@ -19,12 +19,13 @@ configure_logging()
 logger = logging.getLogger(__name__)
 
 # Load environment variables — detect .env file dynamically
-# Priority: EPM.env > *.env > default .env
+# Priority: config/*.env > root *.env > default .env
 _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _env_candidates = [
-    os.path.join(_project_root, 'EPM.env'),
+    *glob.glob(os.path.join(_project_root, 'config', '*.env')),
     *glob.glob(os.path.join(_project_root, '*.env')),
 ]
+_env_candidates = [p for p in _env_candidates if not p.endswith('.env.example')]
 _env_loaded = False
 for _env_path in _env_candidates:
     if os.path.isfile(_env_path):
