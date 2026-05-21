@@ -266,11 +266,11 @@ def render_01_cds_report(df: pd.DataFrame):
             number={'suffix': '%'},
             gauge={
                 'axis': {'range': [0, 100]},
-                'bar': {'color': '#378ADD'},
+                'bar': {'color': '#3053F4'},
                 'steps': [
-                    {'range': [0, 70], 'color': '#639922'},
-                    {'range': [70, 85], 'color': '#EF9F27'},
-                    {'range': [85, 100], 'color': '#E24B4A'},
+                    {'range': [0, 70], 'color': '#04CE7E'},
+                    {'range': [70, 85], 'color': '#C4B7F1'},
+                    {'range': [85, 100], 'color': '#FF5F02'},
                 ],
             }
         ))
@@ -285,7 +285,7 @@ def render_01_cds_report(df: pd.DataFrame):
                 <span>0 TB</span><span>{cds_capacity:.1f} TB</span>
             </div>
             <div style="background:#e0e0e0;border-radius:8px;height:28px;position:relative;">
-                <div style="background:#378ADD;width:{pct_width}%;height:100%;border-radius:8px;"></div>
+                <div style="background:#3053F4;width:{pct_width}%;height:100%;border-radius:8px;"></div>
             </div>
             <div style="text-align:center;font-size:0.85rem;margin-top:6px;">
                 <b>{cds_consumed:.2f} TB</b> consumido de <b>{cds_capacity:.1f} TB</b>
@@ -342,15 +342,15 @@ def render_02_forecast(df: pd.DataFrame):
     fig.add_trace(go.Scatter(
         x=df['Month_Year'].tolist(), y=cur_vals,
         mode='lines+markers', name='Historico',
-        line=dict(color='#4354E9', width=2)
+        line=dict(color='#3053F4', width=2)
     ))
     fig.add_trace(go.Scatter(
         x=[df['Month_Year'].iloc[-1]] + forecast_months,
         y=[cur_vals[-1]] + forecast_vals,
         mode='lines+markers', name='Forecast',
-        line=dict(color='#FC6623', dash='dash', width=2)
+        line=dict(color='#FF5F02', dash='dash', width=2)
     ))
-    fig.add_hline(y=max_cap, line_dash='dot', line_color='#E24B4A',
+    fig.add_hline(y=max_cap, line_dash='dot', line_color='#FF5F02',
                   annotation_text=f'Max Capacity ({max_cap} TB)')
     fig.update_layout(
         title='Space Capacity Forecast',
@@ -405,7 +405,7 @@ def render_03_unused_objects(df: pd.DataFrame):
             title='Conteo de Objetos Sin Uso por Base de Datos',
             labels={'Object_Count': 'Cantidad de Objetos', 'DataBaseName': 'Base de Datos'},
             text='Object_Count', color='Total_Size_GB',
-            color_continuous_scale=['#FFD700', '#FF6B00', '#E24B4A'],
+            color_continuous_scale=['#FFD700', '#FF6B00', '#FF5F02'],
         )
         fig_bar.update_layout(height=400, yaxis={'categoryorder': 'total ascending'})
         fig_bar.update_traces(textposition='outside')
@@ -417,7 +417,7 @@ def render_03_unused_objects(df: pd.DataFrame):
     fig = px.treemap(
         df, path=['DataBaseName', 'TableName'], values='Size_GB',
         color='Size_GB',
-        color_continuous_scale=['#FFD700', '#FF6B00', '#E24B4A'],
+        color_continuous_scale=['#FFD700', '#FF6B00', '#FF5F02'],
         title='Treemap: Objetos Sin Uso por Base de Datos'
     )
     fig.update_layout(height=500, margin=dict(t=40, b=10, l=10, r=10))
@@ -490,7 +490,7 @@ def render_05_06_mvc(df: pd.DataFrame, component_label: str):
         ))
         fig.add_trace(go.Bar(
             x=df_plot['TableName'], y=df_plot['Estimated_Compressed_GB'],
-            name='Estimated Compressed GB', marker_color='#639922'
+            name='Estimated Compressed GB', marker_color='#04CE7E'
         ))
         fig.update_layout(
             barmode='group', title=f'{component_label} - Comparativo',
@@ -538,11 +538,11 @@ def render_07_top_databases(df: pd.DataFrame):
     colors = []
     for pct in df['Effective_Pct_Used']:
         if pct >= 85:
-            colors.append('#E24B4A')
+            colors.append('#FF5F02')
         elif pct >= 70:
-            colors.append('#FC6623')
+            colors.append('#FF5F02')
         else:
-            colors.append('#4354E9')
+            colors.append('#3053F4')
 
     fig = go.Figure()
     fig.add_trace(go.Bar(
@@ -605,7 +605,7 @@ def render_08_top_tables(df: pd.DataFrame):
 
     fig = px.bar(
         df, y='TableName', x='Total_Size_GB', orientation='h',
-        color='Skew_Pct', color_continuous_scale=['#639922', '#FFD700', '#E24B4A'],
+        color='Skew_Pct', color_continuous_scale=['#04CE7E', '#FFD700', '#FF5F02'],
         title='Top 20 Tables By Size (Color = Skew %)',
         labels={'Total_Size_GB': 'Size GB', 'Skew_Pct': 'Skew %'}
     )
@@ -638,7 +638,7 @@ def render_09_unused_databases(df: pd.DataFrame):
         size='Object_Count', hover_name='DataBaseName',
         title='Cuadrante Analitico: Bases Sin Uso',
         labels={'Days_Unused': 'Dias Sin Acceso', 'CurrentPerm_GB': 'Tamano GB'},
-        color_discrete_sequence=['#4354E9']
+        color_discrete_sequence=['#3053F4']
     )
 
     # Highlight purge zone (upper right)
@@ -648,12 +648,12 @@ def render_09_unused_databases(df: pd.DataFrame):
         type='rect',
         x0=x_mid, x1=df['Days_Unused'].max() * 1.1,
         y0=y_mid, y1=df['CurrentPerm_GB'].max() * 1.1,
-        fillcolor='rgba(226,75,74,0.1)', line=dict(color='#E24B4A', dash='dash')
+        fillcolor='rgba(255,95,2,0.1)', line=dict(color='#FF5F02', dash='dash')
     )
     fig.add_annotation(
         x=df['Days_Unused'].max() * 0.9, y=df['CurrentPerm_GB'].max() * 0.95,
         text='Zona de Purga Inmediata', showarrow=False,
-        font=dict(color='#E24B4A', size=12, family='Inter')
+        font=dict(color='#FF5F02', size=12, family='Inter')
     )
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
@@ -708,8 +708,8 @@ def render_10_monthly_snapshot(df: pd.DataFrame):
         x=growth.columns.tolist(),
         y=growth.index.tolist(),
         colorscale=[
-            [0, '#4354E9'], [0.3, '#87CEEB'], [0.5, '#FFFFFF'],
-            [0.7, '#FFCC00'], [1.0, '#E24B4A']
+            [0, '#3053F4'], [0.3, '#87CEEB'], [0.5, '#FFFFFF'],
+            [0.7, '#FFCC00'], [1.0, '#FF5F02']
         ],
         colorbar_title='MoM Growth %',
         text=growth.values.round(1),
@@ -740,11 +740,11 @@ def render_11_space_utilization(df: pd.DataFrame):
     colors = []
     for pct in df['Global_Util_Pct']:
         if pct >= 85:
-            colors.append('#E24B4A')
+            colors.append('#FF5F02')
         elif pct >= 70:
-            colors.append('#FC6623')
+            colors.append('#FF5F02')
         else:
-            colors.append('#4354E9')
+            colors.append('#3053F4')
 
     fig = go.Figure()
 

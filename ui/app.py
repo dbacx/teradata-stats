@@ -40,8 +40,8 @@ def main_app():
     
     # Corporate Banner
     st.markdown("""
-    <div style="background-color: #F0F2F6; padding: 2rem 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
-        <h2 style="margin: 0 0 0.25rem 0; color: #1C1C1E;">VantageOps</h2>
+    <div style="background-color: #f0f4f8; padding: 2rem 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0 0 0.25rem 0; color: #00233C;">VantageOps</h2>
         <p style="margin: 0; color: #555; font-size: 1rem;">Managed Services &mdash; Teradata DBA Optimization Suite</p>
     </div>
     """, unsafe_allow_html=True)
