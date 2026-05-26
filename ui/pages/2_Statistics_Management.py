@@ -11,7 +11,6 @@ from datetime import datetime
 import logging
 import sys
 import os
-import time
 import json
 from pathlib import Path
 
@@ -277,15 +276,12 @@ def _load_kb_script(script_file: str) -> str:
 
 
 def display_ddl_actions(analyzed_data: dict):
-    """Display DDL remediation scripts grouped by component.
+    """Display DDL remediation scripts grouped by component (read-only).
 
     For categories registered in knowledge_base/index.json, the KB script
     is rendered once inside an st.expander (deduplicated, not per row).
     For categories not in the KB, the per-row RemediationDDL from the
     DataFrame is rendered as before.
-
-    Each section includes a multiselect for choosing individual SQL
-    statements to execute against the active Teradata connection.
     """
     st.subheader("Scripts de Remediación")
 
@@ -294,12 +290,6 @@ def display_ddl_actions(analyzed_data: dict):
 
     has_any_ddl = False
     all_ddl_lines = []
-
-    # Session state key for collecting selected statements across sections
-    if "mod2_selected_sql" not in st.session_state:
-        st.session_state.mod2_selected_sql = {}
-
-    section_idx = 0
 
     for component_name, component_key in COMPONENT_RENDER_ORDER:
         df = _normalize_to_dataframe(analyzed_data.get(component_key, pd.DataFrame()))
@@ -316,17 +306,6 @@ def display_ddl_actions(analyzed_data: dict):
                 expander_title = f"{kb_entry['id']} - {kb_entry['description']}"
                 with st.expander(expander_title):
                     st.code(script_content, language="sql")
-                    # Parse individual statements from KB script
-                    stmts = [s.strip() for s in script_content.split(";") if s.strip() and not s.strip().startswith("--")]
-                    if stmts:
-                        selected = st.multiselect(
-                            "Seleccionar sentencias a ejecutar",
-                            options=stmts,
-                            format_func=lambda x: x[:100] + "..." if len(x) > 100 else x,
-                            key=f"ddl_select_{section_idx}",
-                        )
-                        st.session_state.mod2_selected_sql[component_name] = selected
-                    section_idx += 1
                 all_ddl_lines.append(f"-- {expander_title}")
                 all_ddl_lines.append(script_content)
             continue
@@ -341,16 +320,6 @@ def display_ddl_actions(analyzed_data: dict):
         component_ddl = "\n".join(ddl_values)
         st.code(component_ddl, language="sql")
 
-        # Multiselect for per-row DDL statements
-        selected = st.multiselect(
-            "Seleccionar sentencias a ejecutar",
-            options=ddl_values,
-            format_func=lambda x: x[:100] + "..." if len(x) > 100 else x,
-            key=f"ddl_select_{section_idx}",
-        )
-        st.session_state.mod2_selected_sql[component_name] = selected
-        section_idx += 1
-
         all_ddl_lines.extend(ddl_values)
 
     if has_any_ddl:
@@ -362,50 +331,6 @@ def display_ddl_actions(analyzed_data: dict):
             file_name=f"stats_ddl_actions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql",
             mime="text/plain"
         )
-
-        # ── SQL EXECUTION BLOCK ──────────────────────────────────────
-        st.markdown("---")
-        st.subheader("Ejecutar Sentencias Seleccionadas")
-
-        # Gather all selected statements
-        all_selected = []
-        for section_stmts in st.session_state.mod2_selected_sql.values():
-            all_selected.extend(section_stmts)
-
-        st.info(f"**{len(all_selected)}** sentencia(s) seleccionada(s) para ejecución.")
-
-        confirm = st.checkbox("Confirmo que deseo ejecutar las sentencias seleccionadas")
-
-        if st.button("▶ Ejecutar seleccionadas", type="primary"):
-            if not all_selected:
-                st.warning("Selecciona al menos una sentencia.")
-            elif not confirm:
-                st.warning("Debes marcar la casilla de confirmación antes de ejecutar.")
-            else:
-                success_count = 0
-                error_count = 0
-                try:
-                    td_conn = TeradataConnection()
-                    connection = td_conn.connect()
-                    cursor = connection.cursor()
-                    for sql in all_selected:
-                        try:
-                            cursor.execute(sql)
-                            st.success(f"✓ Ejecutado: {sql[:80]}...")
-                            logger.info(f"SQL executed OK: {sql[:120]}")
-                            success_count += 1
-                        except Exception as e:
-                            st.error(f"✗ Error en: {sql[:80]}...\n{str(e)}")
-                            logger.error(f"SQL execution failed: {sql[:120]} | Error: {str(e)}")
-                            error_count += 1
-                    cursor.close()
-                    connection.close()
-                except Exception as e:
-                    st.error(f"Error de conexión a Teradata: {str(e)}")
-                    logger.error(f"Teradata connection error during SQL execution: {str(e)}")
-
-                st.info(f"Ejecución completada: {success_count} exitosas, {error_count} con error.")
-                logger.info(f"SQL execution summary: {success_count} success, {error_count} errors")
     else:
         st.info("No se generaron scripts de remediación.")
 
