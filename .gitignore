@@ -12,10 +12,8 @@ env/
 ENV/
 
 # Credentials — NEVER commit these
-config/*.env
-!config/.env.example
 *.env
-!config/.env.example
+config/connections.xlsx
 
 # Logs and outputs
 logs/*.log

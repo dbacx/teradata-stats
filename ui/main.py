@@ -9,8 +9,11 @@ import pandas as pd
 import streamlit as st
 import sys
 import os
-import argparse
-from dotenv import load_dotenv
+
+from core.connections_manager import (
+    load_connections, get_customers, get_systems, get_connection_params,
+)
+from core.connection import create_connection_from_params
 
 
 # ---------------------------------------------------------------------------
@@ -18,33 +21,14 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 
 @st.cache_resource
-def load_client_environment():
-    """Parse CLI args, configure sys.path, and load the client .env file.
-
-    Returns the client name (e.g. "EPM") on success, or None if the
-    credentials file is missing.
-    """
-    parser = argparse.ArgumentParser(description="VantageOps")
-    parser.add_argument(
-        "--client",
-        type=str,
-        default="EPM",
-        help="Nombre del cliente para cargar credenciales (ej: EPM_PRD, EPM_DEV, BCI_PRD)",
-    )
-    args, _ = parser.parse_known_args()
-
+def _ensure_sys_path():
+    """Ensure project root is on sys.path (cached — runs once)."""
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if project_root not in sys.path:
         sys.path.append(project_root)
+    return project_root
 
-    client_name = args.client.upper()
-    env_file = os.path.join(project_root, "config", f"{client_name}.env")
-    if not os.path.exists(env_file):
-        env_file = os.path.join(project_root, f"{client_name}.env")
-    if os.path.exists(env_file):
-        load_dotenv(env_file, override=True)
-        return client_name
-    return None
+_ensure_sys_path()
 
 
 @st.cache_resource
@@ -150,25 +134,15 @@ def get_global_css():
 # 1. Pandas config (pure Python, no Streamlit rendering)
 pd.set_option("styler.render.max_elements", 2000000)
 
-# 2. Load client environment (cached — runs once per process)
-client = load_client_environment()
-
-# 3. FIRST Streamlit rendering command
+# 2. Page config — FIRST Streamlit rendering command
 st.set_page_config(
-    page_title=f"VantageOps - {client or 'UNKNOWN'}",
+    page_title="VantageOps",
+    page_icon="🔶",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# 4. Validate environment loaded successfully
-if client is None:
-    st.error(
-        "**Error Critico de Configuracion:** No se encontro el archivo de "
-        "credenciales `.env` en la raiz del proyecto."
-    )
-    st.stop()
-
-# 5. Sidebar logo (custom HTML — no white background box)
+# 3. Sidebar logo (custom HTML — no white background box)
 st.markdown("""
 <style>
 [data-testid="stSidebar"] > div:first-child {
@@ -192,41 +166,71 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 6. Inject cached global CSS
+# 4. Inject cached global CSS
 st.markdown(get_global_css(), unsafe_allow_html=True)
 
-# Define pages in the desired order
-# Home first, then Health & Connectivity, then other modules
+# ---------------------------------------------------------------------------
+# Sidebar — Connection selector (connections.xlsx)
+# ---------------------------------------------------------------------------
+df_conn = load_connections()
+
+if df_conn.empty:
+    with st.sidebar:
+        st.warning(
+            "⚠️ No se encontró config/connections.xlsx\n\n"
+            "Ejecuta: `python scripts/create_connections_template.py`\n\n"
+            "Luego edita el archivo con tus credenciales."
+        )
+else:
+    with st.sidebar:
+        st.markdown("### Conexión")
+
+        customers = get_customers(df_conn)
+        selected_customer = st.selectbox("Cliente", customers, key="sb_customer")
+
+        systems = get_systems(df_conn, selected_customer) if selected_customer else []
+        selected_system = st.selectbox("Sistema", systems, key="sb_system")
+
+        if st.button("Conectar", type="primary"):
+            params = get_connection_params(df_conn, selected_customer, selected_system)
+            if not params:
+                st.error("No se encontraron parámetros para esta combinación.")
+            else:
+                try:
+                    connection = create_connection_from_params(params)
+                    connection.close()
+                    st.session_state["td_params"] = params
+                    st.session_state["td_connected"] = True
+                    st.success(f"Conectado a {params['host']}")
+                except Exception as exc:
+                    st.session_state["td_connected"] = False
+                    st.error(f"Error de conexión: {exc}")
+
+        # Connection status indicator
+        if st.session_state.get("td_connected"):
+            params = st.session_state.get("td_params", {})
+            st.markdown(
+                f"<div style='background:#d1e7dd;color:#0f5132;padding:6px 10px;"
+                f"border-radius:4px;font-size:0.8rem;border:1px solid #badbcc;'>"
+                f"🟢 {params.get('customer','')}/{params.get('system','')}"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+# ---------------------------------------------------------------------------
+# Page navigation
+# ---------------------------------------------------------------------------
 pg_home = st.Page("app.py", title="Home")
 pg_dbinfo = st.Page("pages/1_System_Information.py", title="System Information")
 pg_statistics = st.Page("pages/2_Statistics_Management.py", title="Statistics Management")
-#pg_space = st.Page("pages/3_Space.py", title="Space")
-#pg_dbql = st.Page("pages/4_Database_Query_Logging.py", title="Database Query Logging")
-#pg_performance = st.Page("pages/5_Performance_Assessment.py", title="Performance Assessment")
-#pg_schema = st.Page("pages/6_Schema_Design.py", title="Schema Design")
-#pg_hardware = st.Page("pages/7_Hardware_Utilization.py", title="Hardware Utilization")
-#pg_cleanup = st.Page("pages/8_Cleanup_Cost_Optimization.py", title="Cleanup & Cost Optimization")
-#pg_monthly_report = st.Page("pages/9_Monthly_Report.py", title="Monthly Report")
-#pg_security = st.Page("pages/10_Security.py", title="Security")
 
-# Create navigation with grouped sections
 pages = {
     "MODULOS": [
-        pg_home,           # Home
-        pg_dbinfo,         # 1
-        pg_statistics,     # 2
-#        pg_space,          # 3
-#        pg_dbql,           # 4
-#        pg_performance,    # 5
-#        pg_schema,         # 6
-#        pg_hardware,       # 7
-#        pg_cleanup,        # 8
-#        pg_monthly_report, # 9
-#        pg_security        # 10
+        pg_home,
+        pg_dbinfo,
+        pg_statistics,
     ]
 }
 
 navigation = st.navigation(pages)
-
-# Run navigation
 navigation.run()
