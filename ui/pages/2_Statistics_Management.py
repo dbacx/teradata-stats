@@ -11,6 +11,7 @@ from datetime import datetime
 import logging
 import sys
 import os
+import time
 import json
 from pathlib import Path
 
@@ -29,7 +30,7 @@ from core.connection import TeradataConnection
 from collectors.mod2_stats_collector import StatsCollector
 from analyzers.mod2_stats_analyzer import StatsAnalyzer, COMPONENT_LABELS, DDL_COLUMNS
 from core.config import THRESHOLDS, SYSTEM_DATABASES
-from utils.csv_logger import log_execution
+from utils.csv_logger import log_execution, log_analysis_result
 
 # Configure logging
 from core.logging_config import configure_logging
@@ -365,6 +366,8 @@ def main():
     # Execute Analysis Button
     if st.sidebar.button("Ejecutar", type="primary"):
         try:
+            start_time = time.time()
+
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):
                 td_conn = TeradataConnection()
@@ -406,6 +409,8 @@ def main():
                 comments=f"Statistics analysis completed with {len(st.session_state.mod2_findings)} findings"
             )
             
+            elapsed_time = time.time() - start_time
+
             # Custom success message
             st.markdown(
                 "<div style='background-color: #d1e7dd; color: #0f5132; padding: 6px 12px; "
@@ -413,7 +418,53 @@ def main():
                 "margin-top: 10px;'>Análisis completado exitosamente.</div>", 
                 unsafe_allow_html=True
             )
-            
+
+            # --- Log analysis result to history CSV ---
+            findings = st.session_state.mod2_findings
+
+            def _count_by_type(findings_list, finding_type):
+                return sum(1 for f in findings_list if f.get("finding_type") == finding_type)
+
+            def _count_by_severity(findings_list, severity):
+                return sum(1 for f in findings_list if f.get("severity", "").upper() == severity)
+
+            # Count COLLECT / DROP DDLs across all analyzed components
+            collect_ddl_count = 0
+            drop_ddl_count = 0
+            for _comp_key, _comp_df in analyzed_data.items():
+                for ddl_val in _get_ddl_values(_normalize_to_dataframe(_comp_df)):
+                    upper_ddl = ddl_val.strip().upper()
+                    if upper_ddl.startswith("COLLECT"):
+                        collect_ddl_count += 1
+                    elif upper_ddl.startswith("DROP"):
+                        drop_ddl_count += 1
+
+            analysis_record = {
+                "timestamp":        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "customer":         os.getenv("TERADATA_USER", "unknown"),
+                "site_id":          os.getenv("TERADATA_HOST", "unknown"),
+                "system":           os.getenv("TERADATA_DATABASE", "unknown"),
+                "database_filter":  database_name if database_name else "ALL",
+                "total_tables":     total_rows,
+                "zero_stats":       _count_by_type(findings, "Zero Statistics"),
+                "missing_table":    _count_by_type(findings, "Missing Table Stats"),
+                "stale_stats":      _count_by_type(findings, "Stale Statistics"),
+                "bloat":            _count_by_type(findings, "Statistics Bloat"),
+                "total_findings":   len(findings),
+                "critical_count":   _count_by_severity(findings, "CRITICAL"),
+                "high_count":       _count_by_severity(findings, "HIGH"),
+                "medium_count":     _count_by_severity(findings, "MEDIUM"),
+                "low_count":        _count_by_severity(findings, "LOW"),
+                "collect_ddls":     collect_ddl_count,
+                "drop_ddls":        drop_ddl_count,
+                "execution_seconds": round(elapsed_time, 2),
+            }
+
+            try:
+                log_analysis_result(analysis_record)
+            except Exception as log_err:
+                st.warning(f"Historial no registrado: {log_err}")
+
         except Exception as e:
             st.error(f"Error durante el análisis: {str(e)}")
             logger.error(f"Analysis error: {str(e)}")
