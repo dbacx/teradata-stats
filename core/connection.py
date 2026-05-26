@@ -2,39 +2,17 @@
 Teradata Database Connection Module
 
 This module provides secure connection functionality to Teradata databases
-with proper Query Band injection for application tracing and credential management
-through environment variables.
+with proper Query Band injection for application tracing and credential management.
 """
 
-import os
-import glob
 import logging
 from typing import Optional, Dict, Any
-from dotenv import load_dotenv
 import teradatasql
 
 # Configure logging
 from core.logging_config import configure_logging
 configure_logging()
 logger = logging.getLogger(__name__)
-
-# Load environment variables — detect .env file dynamically
-# Priority: config/*.env > root *.env > default .env
-_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_env_candidates = [
-    *glob.glob(os.path.join(_project_root, 'config', '*.env')),
-    *glob.glob(os.path.join(_project_root, '*.env')),
-]
-_env_candidates = [p for p in _env_candidates if not p.endswith('.env.example')]
-_env_loaded = False
-for _env_path in _env_candidates:
-    if os.path.isfile(_env_path):
-        load_dotenv(_env_path)
-        logger.info(f"Loaded environment from: {os.path.basename(_env_path)}")
-        _env_loaded = True
-        break
-if not _env_loaded:
-    load_dotenv()  # fallback to default .env
 
 
 class TeradataConnection:
@@ -45,14 +23,14 @@ class TeradataConnection:
     def __init__(self, host: Optional[str] = None, user: Optional[str] = None, 
                  password: Optional[str] = None, database: Optional[str] = None):
         
-        self.host = host or os.getenv('TERADATA_HOST')
-        self.user = user or os.getenv('TERADATA_USER')
-        self.password = password or os.getenv('TERADATA_PASSWORD')
-        self.database = database or os.getenv('TERADATA_DATABASE')
+        self.host = host
+        self.user = user
+        self.password = password
+        self.database = database
         self.query_band = 'App=TDStatsOpt;'
         
         if not all([self.host, self.user, self.password]):
-            raise ValueError("Missing required connection parameters. Check your .env file.")
+            raise ValueError("Missing required connection parameters (host, user, password).")
     
     def connect(self) -> teradatasql.connect:
         """
@@ -147,6 +125,15 @@ class TeradataConnection:
             return False
 
 
-def create_connection() -> TeradataConnection:
-    """Factory function"""
-    return TeradataConnection()
+def create_connection_from_params(params: dict):
+    """Create a TeradataConnection from a params dict and return the live connection.
+
+    Expected keys: host, user, password, database (optional).
+    """
+    td = TeradataConnection(
+        host=params.get("host"),
+        user=params.get("user"),
+        password=params.get("password"),
+        database=params.get("database"),
+    )
+    return td.connect()

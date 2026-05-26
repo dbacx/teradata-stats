@@ -10,7 +10,6 @@ import pandas as pd
 from datetime import datetime
 import logging
 import sys
-import os
 import time
 import json
 from pathlib import Path
@@ -26,7 +25,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)  # insert(0) fuerza a Python a buscar aquí primero
 
 # Ahora sí, importaciones locales
-from core.connection import TeradataConnection
+from core.connection import create_connection_from_params
 from collectors.mod2_stats_collector import StatsCollector
 from analyzers.mod2_stats_analyzer import StatsAnalyzer, COMPONENT_LABELS, DDL_COLUMNS
 from core.config import THRESHOLDS, SYSTEM_DATABASES
@@ -370,8 +369,11 @@ def main():
 
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):
-                td_conn = TeradataConnection()
-                connection = td_conn.connect()
+                params = st.session_state.get("td_params", {})
+                if not params:
+                    st.error("Conecta primero desde el sidebar.")
+                    st.stop()
+                connection = create_connection_from_params(params)
                 logger.info("Connected to Teradata")
             
             # Step 2: Collect data using StatsCollector
@@ -441,9 +443,9 @@ def main():
 
             analysis_record = {
                 "timestamp":        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "customer":         os.getenv("TERADATA_USER", "unknown"),
-                "site_id":          os.getenv("TERADATA_HOST", "unknown"),
-                "system":           os.getenv("TERADATA_DATABASE", "unknown"),
+                "customer":         st.session_state.get("td_params", {}).get("customer", "unknown"),
+                "site_id":          st.session_state.get("td_params", {}).get("host", "unknown"),
+                "system":           st.session_state.get("td_params", {}).get("system", "unknown"),
                 "database_filter":  database_name if database_name else "ALL",
                 "total_tables":     total_rows,
                 "zero_stats":       _count_by_type(findings, "Zero Statistics"),

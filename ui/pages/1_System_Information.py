@@ -20,7 +20,7 @@ project_root = str(current_file_path.parent.parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from core.connection import TeradataConnection
+from core.connection import create_connection_from_params
 from collectors.mod1_health_collector import SystemInformationCollector
 from analyzers.mod1_health_analyzer import SystemInformationAnalyzer
 from utils.csv_logger import log_execution
@@ -97,8 +97,11 @@ def main():
         try:
             # Step 1: Connect to database
             with st.spinner("Conectando a Teradata..."):
-                td_conn = TeradataConnection()
-                connection = td_conn.connect()
+                params = st.session_state.get("td_params", {})
+                if not params:
+                    st.error("Conecta primero desde el sidebar.")
+                    st.stop()
+                connection = create_connection_from_params(params)
                 logger.info("Connected to Teradata")
             
             # Step 2: Collect data using SystemInformationCollector

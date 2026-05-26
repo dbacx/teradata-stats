@@ -11,11 +11,23 @@ aggregation to avoid Cartesian products and ensure accurate space calculations.
 import logging
 import pandas as pd
 from typing import Optional
-from core.connection import create_connection
+from core.connection import create_connection_from_params
 from core.schemas import validate_columns
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+def _get_connection():
+    """Obtain a live Teradata connection from session-state params."""
+    try:
+        import streamlit as st
+        params = st.session_state.get("td_params", {})
+        if params:
+            return create_connection_from_params(params)
+    except Exception:
+        pass
+    raise ConnectionError("No connection parameters available. Connect via sidebar first.")
 
 
 def extract_database_stats(database_name: Optional[str] = None, table_name: Optional[str] = None) -> pd.DataFrame:
@@ -52,9 +64,7 @@ def extract_database_stats(database_name: Optional[str] = None, table_name: Opti
     
     conn = None
     try:
-        # Create connection using the core module
-        td_conn = create_connection()
-        conn = td_conn.connect()
+        conn = _get_connection()
         
         # Build dynamic WHERE clause based on parameters
         where_conditions = []
@@ -195,9 +205,8 @@ def extract_database_stats_batch(database_names: list) -> pd.DataFrame:
 def validate_database_access(database_name: str) -> bool:
     """Validate if the specified database exists and is accessible."""
     try:
-        td_conn = create_connection()
-        conn = td_conn.connect()
-        
+        conn = _get_connection()
+
         query = "SELECT 1 FROM DBC.Databases WHERE DatabaseName = ?"
         cursor = conn.cursor()
         cursor.execute(query, [database_name])

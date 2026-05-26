@@ -18,7 +18,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from core.connection import TeradataConnection
+from core.connection import create_connection_from_params
 from collectors.mod3_space_collector import SpaceCollector
 from analyzers.mod3_space_analyzer import SpaceAnalyzer, COMPONENT_LABELS, COMPONENT_SEVERITY, DDL_COLUMNS
 from core.config import THRESHOLDS, SYSTEM_DATABASES
@@ -953,8 +953,11 @@ def main():
         else:
             try:
                 with st.spinner("Conectando a Teradata..."):
-                    td_conn = TeradataConnection()
-                    connection = td_conn.connect()
+                    params = st.session_state.get("td_params", {})
+                    if not params:
+                        st.error("Conecta primero desde el sidebar.")
+                        st.stop()
+                    connection = create_connection_from_params(params)
 
                 with st.spinner("Recolectando datos de espacio..."):
                     collector = SpaceCollector()
