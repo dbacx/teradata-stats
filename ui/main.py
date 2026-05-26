@@ -5,10 +5,16 @@ This module provides the main navigation using Streamlit's st.navigation API
 to control the order of pages in the sidebar.
 """
 
-import pandas as pd
-import streamlit as st
 import sys
 import os
+
+# Ensure project root is on sys.path BEFORE any local imports
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+import pandas as pd
+import streamlit as st
 
 from core.connections_manager import (
     load_connections, get_customers, get_systems, get_connection_params,
@@ -19,16 +25,6 @@ from core.connection import create_connection_from_params
 # ---------------------------------------------------------------------------
 # Cached helpers (executed once per process, not on every rerun)
 # ---------------------------------------------------------------------------
-
-@st.cache_resource
-def _ensure_sys_path():
-    """Ensure project root is on sys.path (cached — runs once)."""
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if project_root not in sys.path:
-        sys.path.append(project_root)
-    return project_root
-
-_ensure_sys_path()
 
 
 @st.cache_resource
