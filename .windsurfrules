@@ -223,15 +223,13 @@ La arquitectura sigue una separación estricta de responsabilidades en cuatro ca
 - `streamlit` — Interfaz web (layout wide, sidebar expandido)
 - `plotly` — Visualizaciones interactivas (scatter, bar charts)
 - `python-pptx` — Generación de reportes PowerPoint
-- `openpyxl` — Generación de reportes Excel
-- `python-dotenv` — Gestión segura de credenciales desde `.env`
 
 ---
 
 ## 11. Seguridad
 
-- Las credenciales de conexión se gestionan exclusivamente con variables de entorno
-  cargadas desde `.env` mediante `python-dotenv`. **PROHIBIDO** hardcodear credenciales.
+- Las credenciales de conexión se gestionan desde `config/connections.csv`.
+  **PROHIBIDO** hardcodear credenciales.
 - Query Band (`App=TDStatsOpt;`) se inyecta automáticamente en cada sesión para
   auditoría y trazabilidad.
 - La lista de bases de datos de sistema excluidas se gestiona en `core/system_databases.txt`.
@@ -251,7 +249,7 @@ La arquitectura sigue una separación estricta de responsabilidades en cuatro ca
 
 ## 13. Utilidades
 
-- `utils/csv_logger.py` → `log_execution()` registra cada ejecución de módulo
+- `utils/csv_logger.py` → `log_execution(record)` registra cada ejecución a `logs/execution_log.csv`
   con ticket, proyecto, sistema, recurso, issue, solicitante y comentarios.
 - `scripts/standardize_module10_queries.py` → Script de estandarización de queries
   del Módulo 10.

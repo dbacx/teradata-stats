@@ -401,15 +401,20 @@ def main():
             connection.close()
             
             # Log execution
-            log_execution(
-                ticket="Statistics_Management",
-                project_name="Teradata DBA Services",
-                system_name="Production",
-                resource_name="TD_PROD",
-                issue="Statistics Analysis",
-                request_by="System",
-                comments=f"Statistics analysis completed with {len(st.session_state.mod2_findings)} findings"
-            )
+            params = st.session_state.get("td_params", {})
+            log_execution({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "customer": params.get("customer", "unknown"),
+                "site_id": params.get("site_id", "unknown"),
+                "system": params.get("system", "unknown"),
+                "ticket": "Statistics_Management",
+                "project_name": "Teradata DBA Services",
+                "system_name": params.get("site_id", ""),
+                "resource_name": "TD_PROD",
+                "issue": "Statistics Analysis",
+                "request_by": "System",
+                "comments": f"Statistics analysis completed with {len(st.session_state.mod2_findings)} findings",
+            })
             
             elapsed_time = time.time() - start_time
 

@@ -61,13 +61,15 @@ def get_global_css():
 
     /* 4. Botones primarios — Teradata Orange oficial */
     [data-testid="baseButton-primary"] {
-        background-color: #FF5F02 !important;
+        background-color: #C24B00 !important;
         color: #FFFFFF !important;
         border: none !important;
         font-weight: 600 !important;
+        border-radius: 6px !important;
     }
     [data-testid="baseButton-primary"]:hover {
-        background-color: #cc4d00 !important;
+        background-color: #A33D00 !important;
+        transition: background-color 0.2s ease;
     }
 
     /* 5. Sidebar navigation — tipografía unificada */
@@ -166,14 +168,14 @@ st.markdown("""
 st.markdown(get_global_css(), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Sidebar — Connection selector (connections.xlsx)
+# Sidebar — Connection selector (connections.csv)
 # ---------------------------------------------------------------------------
 df_conn = load_connections()
 
 if df_conn.empty:
     with st.sidebar:
         st.warning(
-            "⚠️ No se encontró config/connections.xlsx\n\n"
+            "⚠️ No se encontró config/connections.csv\n\n"
             "Ejecuta: `python scripts/create_connections_template.py`\n\n"
             "Luego edita el archivo con tus credenciales."
         )

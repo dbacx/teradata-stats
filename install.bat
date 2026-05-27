@@ -52,22 +52,20 @@ if errorlevel 1 (
 )
 echo  [OK] Dependencies installed.
 
-REM ── Create client config if missing ──────────────────────────
+REM ── Create connection config if missing ─────────────────────
 echo.
 echo  [4/4] Checking configuration...
-if not exist config\*.env (
-    if not exist config (mkdir config)
-    copy config\.env.example config\MY_CLIENT.env >nul
+if not exist config\connections.csv (
+    python scripts\create_connections_template.py
     echo.
     echo  ============================================================
-    echo   ACTION REQUIRED: Configure your client connection
+    echo   ACTION REQUIRED: Configure your connections
     echo  ============================================================
-    echo   A template was created at: config\MY_CLIENT.env
+    echo   A template was created at: config\connections.csv
     echo   Edit this file with your Teradata credentials before running.
-    echo   Rename the file to match your client name (e.g. EPM.env)
     echo  ============================================================
 ) else (
-    echo  [OK] Client configuration found.
+    echo  [OK] Connection configuration found.
 )
 
 REM ── Create run shortcut ──────────────────────────────────────
