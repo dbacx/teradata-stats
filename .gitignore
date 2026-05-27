@@ -13,7 +13,7 @@ ENV/
 
 # Credentials — NEVER commit these
 *.env
-config/connections.xlsx
+config/connections.csv
 
 # Logs and outputs
 logs/*.log
@@ -32,7 +32,8 @@ desktop.ini
 # Generated SQL outputs (not source SQL)
 collect_stats_*.sql
 drop_stats_*.sql
-execution_log.csv
+logs/execution_log.csv
+logs/execution_log_*.csv
 
 # Streamlit (keep config.toml)
 .streamlit/

@@ -1,65 +1,38 @@
 #!/usr/bin/env python3
 """
-Create an empty connections.xlsx template at config/connections.xlsx.
+Create a connections.csv template at config/connections.csv.
 
 Usage:
     python scripts/create_connections_template.py
 """
 
+import csv
 import os
-import sys
-from pathlib import Path
-
-# Ensure project root is on sys.path
-project_root = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_root))
-
-try:
-    import pandas as pd
-except ImportError:
-    print("[ERROR] pandas is required. Run: pip install pandas openpyxl")
-    sys.exit(1)
-
-try:
-    import openpyxl  # noqa: F401 — required by pandas for .xlsx
-except ImportError:
-    print("[ERROR] openpyxl is required. Run: pip install openpyxl")
-    sys.exit(1)
 
 
-def main():
-    config_dir = project_root / "config"
-    config_dir.mkdir(exist_ok=True)
+def create_template():
+    os.makedirs("config", exist_ok=True)
+    path = os.path.join("config", "connections.csv")
 
-    output_path = config_dir / "connections.xlsx"
+    headers = [
+        "Customer Name", "System Name", "Site ID",
+        "Host Name", "User Name", "Password",
+    ]
+    sample_rows = [
+        ("BCI",      "PRODUCTION",  "TDICAZBCICPRD03", "TDICAZBCICPRD03", "dba_user", ""),
+        ("BCI",      "DEVELOPMENT", "TDICAZBCICDEV01", "TDICAZBCICDEV01", "dba_user", ""),
+        ("EPM",      "PRODUCTION",  "TDICAZEPM0PRD00", "TDICAZEPM0PRD00", "dba_user", ""),
+        ("EPM",      "DEVELOPMENT", "TDICAZEPM0DEV00", "TDICAZEPM0DEV00", "dba_user", ""),
+        ("Experian", "PRODUCTION",  "TDICAZEXP0PRD00", "TDICAZEXP0PRD00", "dba_user", ""),
+    ]
 
-    if output_path.exists():
-        print(f"[INFO] File already exists: {output_path}")
-        overwrite = input("Overwrite? (y/N): ").strip().lower()
-        if overwrite != "y":
-            print("[INFO] Aborted.")
-            return
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(headers)
+        writer.writerows(sample_rows)
 
-    # Template with one example row
-    df = pd.DataFrame({
-        "Customer": ["EXAMPLE_CLIENT"],
-        "System": ["PRD"],
-        "Host": ["your_teradata_host"],
-        "User": ["your_username"],
-        "Password": ["your_password"],
-        "Database": ["your_database"],
-    })
-
-    df.to_excel(output_path, index=False, engine="openpyxl")
-    print(f"[OK] Template created: {output_path}")
-    print()
-    print("Next steps:")
-    print("  1. Open config/connections.xlsx in Excel")
-    print("  2. Replace the example row with your real credentials")
-    print("  3. Add one row per customer/system combination")
-    print("  4. Save and close Excel")
-    print("  5. Run: streamlit run ui/main.py")
+    print(f"[OK] Created: {path}")
 
 
 if __name__ == "__main__":
-    main()
+    create_template()

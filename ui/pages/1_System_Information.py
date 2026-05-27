@@ -121,15 +121,20 @@ def main():
             connection.close()
             
             # Log execution
-            log_execution(
-                ticket="System_Information",
-                project_name="Teradata DBA Services",
-                system_name="Production",
-                resource_name="TD_PROD",
-                issue="System Information Query",
-                request_by="System",
-                comments="System information analysis completed"
-            )
+            params = st.session_state.get("td_params", {})
+            log_execution({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "customer": params.get("customer", "unknown"),
+                "site_id": params.get("site_id", "unknown"),
+                "system": params.get("system", "unknown"),
+                "ticket": "System_Information",
+                "project_name": "Teradata DBA Services",
+                "system_name": params.get("site_id", ""),
+                "resource_name": "TD_PROD",
+                "issue": "System Information Query",
+                "request_by": "System",
+                "comments": "System information analysis completed",
+            })
             
             # Custom success message
             st.markdown(
