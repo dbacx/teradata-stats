@@ -172,3 +172,28 @@ h1 a, h2 a, h3 a,
     opacity: 0.92;
     filter: drop-shadow(0px 0px 0px transparent);
 }
+
+/* 13. Corrección de contraste en Selectbox (Base Web) */
+
+/* Texto seleccionado y placeholder dentro de la caja */
+div[data-baseweb="select"] div,
+div[data-baseweb="select"] span {
+    color: #1a2b38 !important;
+}
+
+/* Fondo de la caja de selección para asegurar contraste */
+div[data-baseweb="select"] > div {
+    background-color: #FFFFFF !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Opciones dentro del menú desplegable */
+ul[data-baseweb="menu"] li {
+    color: #1a2b38 !important;
+    background-color: #FFFFFF !important;
+}
+
+/* Hover en las opciones del menú desplegable */
+ul[data-baseweb="menu"] li:hover {
+    background-color: #f0f4f8 !important;
+}
