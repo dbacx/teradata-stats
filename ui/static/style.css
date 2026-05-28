@@ -32,38 +32,46 @@
     display: block !important;
 }
 
-/* 4. Primary buttons */
-button[kind="primary"],
-button[kind="primary"] * {
+/* 4. Primary buttons — slate brand colour */
+button[kind="primary"] {
     background-color: #64748B !important;
     color: #FFFFFF !important;
-    border: none !important;
-    font-weight: 600 !important;
-    border-radius: 6px !important;
+    border: none;
+    font-weight: 600;
+    border-radius: 6px;
 }
-button[kind="primary"]:hover,
-button[kind="primary"]:hover * {
+button[kind="primary"] p {
+    color: inherit;
+}
+button[kind="primary"]:hover {
     background-color: #475569 !important;
-    color: #FFFFFF !important;
     transition: background-color 0.2s ease;
 }
 
 /* 5. Sidebar navigation — unified typography */
 [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div {
-    font-size: 1.1rem !important;
-    font-weight: 500 !important;
+    font-size: 1.1rem;
+    font-weight: 500;
 }
 
 /* 6. Global typography — paragraphs and lists */
 p, li {
-    font-size: 1rem !important;
-    line-height: 1.6 !important;
-    color: #1a2b38 !important;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #1a2b38;
+}
+
+/* 6b. Selectbox / form controls — let Streamlit manage text colour */
+[data-baseweb="select"] {
+    color: #1a2b38;
+}
+[data-baseweb="select"] li[aria-selected="true"] {
+    color: #1a2b38;
 }
 
 /* 7. Headings — strong contrast */
 h1, h2, h3 {
-    color: #00233C !important;
+    color: #00233C;
 }
 
 /* 8. Hide anchor link icons in headings */
