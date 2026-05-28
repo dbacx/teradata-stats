@@ -26,8 +26,6 @@ from core.connection import create_connection_from_params
 # Cached helpers (executed once per process, not on every rerun)
 # ---------------------------------------------------------------------------
 
-
-@st.cache_resource
 def get_global_css():
     """Return the global CSS string (offline icon fallback + corporate buttons)."""
     return """
