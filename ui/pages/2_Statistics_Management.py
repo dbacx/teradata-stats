@@ -201,7 +201,7 @@ def display_findings_table(analyzed_data: dict):
 
     # ── Tabbed interface — one tab per Component ──────────────────────────
 
-    DISPLAY_COLS = ["DatabaseName", "TableName", "Action_SQL", "Component"]
+    DISPLAY_COLS = ["Severity", "DatabaseName", "TableName", "Action_SQL", "Component"]
     display_cols = [c for c in DISPLAY_COLS if c in combined_df.columns]
 
     COMPONENT_ORDER = [
