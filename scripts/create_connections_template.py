@@ -19,11 +19,7 @@ def create_template():
         "Host Name", "User Name", "Password",
     ]
     sample_rows = [
-        ("BCI",      "PRODUCTION",  "TDICAZBCICPRD03", "TDICAZBCICPRD03", "dba_user", ""),
-        ("BCI",      "DEVELOPMENT", "TDICAZBCICDEV01", "TDICAZBCICDEV01", "dba_user", ""),
-        ("EPM",      "PRODUCTION",  "TDICAZEPM0PRD00", "TDICAZEPM0PRD00", "dba_user", ""),
-        ("EPM",      "DEVELOPMENT", "TDICAZEPM0DEV00", "TDICAZEPM0DEV00", "dba_user", ""),
-        ("Experian", "PRODUCTION",  "TDICAZEXP0PRD00", "TDICAZEXP0PRD00", "dba_user", ""),
+        ("CLIENTE", "SISTEMA", "SITEID", "HOSTNAME", "pdcradmin", "pdcradmin")
     ]
 
     with open(path, "w", newline="", encoding="utf-8") as f:

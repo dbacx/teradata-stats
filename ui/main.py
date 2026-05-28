@@ -106,10 +106,10 @@ def get_global_css():
         letter-spacing: 0.01em;
     }
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a:hover div p {
-        color: #FF5F02 !important;
+        color: #C24B00 !important;
     }
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] div p {
-        color: #FF5F02 !important;
+        color: #C24B00 !important;
         font-weight: 700 !important;
     }
     /* 10. Section label MODULOS — uppercase small caps */
@@ -187,7 +187,7 @@ st.markdown("""
 }
 </style>
 <div class="td-logo-wrapper">
-    <img src="app/static/logo.jpg" alt="teradata.">
+    <img src="app/static/logo.png" alt="teradata.">
 </div>
 """, unsafe_allow_html=True)
 
