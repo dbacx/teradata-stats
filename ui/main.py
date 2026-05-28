@@ -32,11 +32,13 @@ def get_global_css():
     """Return the global CSS string (offline icon fallback + corporate buttons)."""
     return """
 <style>
-    /* 1. Ocultar el texto crudo de los iconos rotos */
-    .material-symbols-rounded, 
-    .material-symbols-outlined,
-    [data-testid="stSidebarCollapseButton"] span,
-    [data-testid="stExpanderToggleIcon"] {
+    /* 1. Hide broken icon text ONLY in Streamlit UI chrome elements */
+    [data-testid="stSidebarCollapseButton"] .material-symbols-outlined,
+    [data-testid="stSidebarCollapseButton"] .material-symbols-rounded,
+    [data-testid="stExpanderToggleIcon"] .material-symbols-outlined,
+    [data-testid="stExpanderToggleIcon"] .material-symbols-rounded,
+    [data-testid="stSidebarCollapseButton"] span:not(.td-icon),
+    [data-testid="stExpanderToggleIcon"] span:not(.td-icon) {
         color: transparent !important;
         font-size: 0px !important;
     }
@@ -229,10 +231,10 @@ else:
             for _, row in systems_df.iterrows()
         }
         selected_label = st.selectbox("Sistema", list(system_options.keys()), key="sb_system")
-        selected_system = system_options.get(selected_label, "")
+        selected_site_id = system_options.get(selected_label, "")
 
         if st.button("Conectar", type="primary"):
-            params = get_connection_params(df_conn, selected_customer, selected_system)
+            params = get_connection_params(df_conn, selected_customer, selected_site_id)
             if not params:
                 st.error("No se encontraron parámetros para esta combinación.")
             else:
