@@ -26,162 +26,14 @@ from core.connection import create_connection_from_params
 # Cached helpers (executed once per process, not on every rerun)
 # ---------------------------------------------------------------------------
 
-def get_global_css():
-    """Return the global CSS string (offline icon fallback + corporate buttons)."""
-    return """
-<style>
-    /* 1. Hide broken icon text ONLY in Streamlit UI chrome elements */
-    [data-testid="stSidebarCollapseButton"] .material-symbols-outlined,
-    [data-testid="stSidebarCollapseButton"] .material-symbols-rounded,
-    [data-testid="stExpanderToggleIcon"] .material-symbols-outlined,
-    [data-testid="stExpanderToggleIcon"] .material-symbols-rounded,
-    [data-testid="stSidebarCollapseButton"] span:not(.td-icon),
-    [data-testid="stExpanderToggleIcon"] span:not(.td-icon) {
-        color: transparent !important;
-        font-size: 0px !important;
-    }
-
-    /* 2. Reemplazo para el botón del menú lateral (keyboard_double_arrow...) */
-    [data-testid="stSidebarCollapseButton"] span::after {
-        content: "☰" !important;
-        font-size: 1.2rem !important;
-        color: #1a2b38 !important;
-        visibility: visible !important;
-        display: block !important;
-    }
-
-    /* 3. Reemplazo para la flecha de los acordeones/expanders (expand_more) */
-    [data-testid="stExpanderToggleIcon"]::after {
-        content: "▼" !important;
-        font-size: 0.8rem !important;
-        color: #1a2b38 !important;
-        visibility: visible !important;
-        display: block !important;
-    }
-
-    /* 4. Botones primarios */
-        button[kind="primary"],
-        button[kind="primary"] * {
-            background-color: #64748B !important;
-            color: #FFFFFF !important;
-            border: none !important;
-            font-weight: 600 !important;
-            border-radius: 6px !important;
-        }
-        button[kind="primary"]:hover,
-        button[kind="primary"]:hover * {
-            background-color: #475569 !important;
-            color: #FFFFFF !important;
-            transition: background-color 0.2s ease;
-        }
-
-    /* 5. Sidebar navigation — tipografía unificada */
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div {
-        font-size: 1.1rem !important;
-        font-weight: 500 !important;
-    }
-
-    /* 6. Tipografía global — párrafos y listas */
-    p, li {
-        font-size: 1rem !important;
-        line-height: 1.6 !important;
-        color: #1a2b38 !important;
-    }
-
-    /* 7. Títulos — contraste fuerte */
-    h1, h2, h3 {
-        color: #00233C !important;
-    }
-
-    /* 8. Ocultar iconos de anchor link en títulos */
-    [data-testid="stHeaderActionElements"],
-    .st-emotion-cache-10trblm a,
-    h1 a, h2 a, h3 a,
-    [data-testid="StyledLinkIconContainer"] {
-        display: none !important;
-    }
-
-    /* 9. Sidebar nav — bold dark module names */
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div p {
-        font-size: 1.05rem !important;
-        font-weight: 700 !important;
-        color: #00233C !important;
-        letter-spacing: 0.01em;
-    }
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a:hover div p {
-        color: #00233C !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] div p {
-        color: #00233C !important;
-        font-weight: 700 !important;
-    }
-    /* 10. Section label MODULOS — unified with sidebar headers */
-    [data-testid="stNavSectionHeader"],
-    [data-testid="stNavSectionHeader"] p {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.05em !important;
-        color: #1a2b38 !important;
-        text-transform: uppercase !important;
-        text-align: center !important;
-        display: block !important;
-    }
-
-    /* 11. Findings tabs styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 4px;
-        flex-wrap: wrap;
-        border-bottom: 2px solid #00233C;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: #f0f4f8;
-        border-radius: 6px 6px 0 0;
-        padding: 6px 14px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: #00233C;
-        border: 1px solid #e2e8f0;
-        border-bottom: none;
-        white-space: nowrap;
-    }
-    .stTabs [aria-selected="true"] {
-        background: #00233C !important;
-        color: #FFFFFF !important;
-        border-color: #00233C !important;
-    }
-    .stTabs [data-baseweb="tab"]:hover {
-        background: #1a3a52 !important;
-        color: #FFFFFF !important;
-    }
-    /* 12. Sidebar section titles: unified size, weight, alignment */
-
-    /* "Configuración" and "Conexión" — st.sidebar.header() → h2 */
-    [data-testid="stSidebar"] h2 {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        color: #1a2b38 !important;
-        text-align: center !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        margin-top: 0.8rem !important;
-        margin-bottom: 0.4rem !important;
-    }
-
-    /* "MODULOS" — generated by st.navigation() */
-    [data-testid="stNavSectionHeader"] [data-testid="stMarkdownContainer"],
-    [data-testid="stNavSectionHeader"] [data-testid="stMarkdownContainer"] p {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        color: #1a2b38 !important;
-        text-align: center !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        display: block !important;
-        margin-top: 0.8rem !important;
-        margin-bottom: 0.4rem !important;
-    }
-</style>
-"""
+@st.cache_data
+def load_css(css_file_path: str) -> str:
+    """Read the static CSS file and return it wrapped in <style> tags."""
+    if os.path.exists(css_file_path):
+        with open(css_file_path, "r", encoding="utf-8") as f:
+            return f"<style>{f.read()}</style>"
+    st.warning(f"⚠️ No se encontró el archivo de estilos: {css_file_path}")
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +76,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 4. Inject cached global CSS
-st.markdown(get_global_css(), unsafe_allow_html=True)
+css_path = os.path.join(_project_root, "ui", "static", "style.css")
+st.markdown(load_css(css_path), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Sidebar — Connection selector (connections.csv)

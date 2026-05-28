@@ -61,14 +61,6 @@ p, li {
     color: #1a2b38;
 }
 
-/* 6b. Selectbox / form controls — let Streamlit manage text colour */
-[data-baseweb="select"] {
-    color: #1a2b38;
-}
-[data-baseweb="select"] li[aria-selected="true"] {
-    color: #1a2b38;
-}
-
 /* 7. Headings — strong contrast */
 h1, h2, h3 {
     color: #00233C;
@@ -126,7 +118,7 @@ h1 a, h2 a, h3 a,
     border-bottom: none;
     white-space: nowrap;
 }
-.stTabs [aria-selected="true"] {
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
     background: #00233C !important;
     color: #FFFFFF !important;
     border-color: #00233C !important;
