@@ -63,14 +63,14 @@ def get_global_css():
 
     /* 4. Botones primarios — Teradata Navy oficial */
     [data-testid="baseButton-primary"] {
-        background-color: #00233C !important;
+        background-color: #64748B !important;
         color: #FFFFFF !important;
         border: none !important;
         font-weight: 600 !important;
         border-radius: 6px !important;
     }
     [data-testid="baseButton-primary"]:hover {
-        background-color: #001828 !important;
+        background-color: #475569 !important;
         transition: background-color 0.2s ease;
     }
 
