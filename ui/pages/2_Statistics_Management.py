@@ -5,6 +5,8 @@ This page provides a dedicated interface for the Statistics Management module,
 using the new StatsCollector and StatsAnalyzer classes.
 """
 
+import re
+
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -199,9 +201,39 @@ def display_findings_table(analyzed_data: dict):
 
     combined_df = pd.concat(all_findings, ignore_index=True)
 
+    # ── Normalize DatabaseName: handle DataBaseName casing + None/NaN ────
+    if "DataBaseName" in combined_df.columns and "DatabaseName" not in combined_df.columns:
+        combined_df.rename(columns={"DataBaseName": "DatabaseName"}, inplace=True)
+    elif "DataBaseName" in combined_df.columns and "DatabaseName" in combined_df.columns:
+        combined_df["DatabaseName"] = combined_df["DatabaseName"].fillna(
+            combined_df["DataBaseName"]
+        )
+        combined_df.drop(columns=["DataBaseName"], inplace=True)
+
+    if "DatabaseName" in combined_df.columns:
+        combined_df["DatabaseName"] = (
+            combined_df["DatabaseName"]
+            .astype(str)
+            .replace({"None": "", "nan": "", "NaN": "", "NULL": ""})
+            .str.strip()
+        )
+
+        def _extract_db_from_sql(row):
+            if row.get("DatabaseName", ""):
+                return row["DatabaseName"]
+            sql = str(row.get("Action_SQL", ""))
+            match = re.search(
+                r'\bON\s+([A-Za-z0-9_$]+)\.[A-Za-z0-9_$]+', sql, re.IGNORECASE
+            )
+            return match.group(1) if match else ""
+
+        combined_df["DatabaseName"] = combined_df.apply(
+            _extract_db_from_sql, axis=1
+        )
+
     # ── Tabbed interface — one tab per Component ──────────────────────────
 
-    DISPLAY_COLS = ["DatabaseName", "TableName", "Action_SQL", "Component"]
+    DISPLAY_COLS = ["Severity", "DatabaseName", "TableName", "Action_SQL", "Component"]
     display_cols = [c for c in DISPLAY_COLS if c in combined_df.columns]
 
     COMPONENT_ORDER = [
