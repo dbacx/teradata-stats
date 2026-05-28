@@ -61,16 +61,22 @@ def get_global_css():
         display: block !important;
     }
 
-    /* 4. Botones primarios — Teradata Navy oficial */
-    [data-testid="baseButton-primary"] {
+    /* 4. Botones primarios */
+    [data-testid="baseButton-primary"],
+    [data-testid="baseButton-primary"] > div,
+    [data-testid="baseButton-primary"] p,
+    [data-testid="baseButton-primary"] span {
         background-color: #64748B !important;
         color: #FFFFFF !important;
         border: none !important;
         font-weight: 600 !important;
         border-radius: 6px !important;
     }
-    [data-testid="baseButton-primary"]:hover {
+    [data-testid="baseButton-primary"]:hover,
+    [data-testid="baseButton-primary"]:hover span,
+    [data-testid="baseButton-primary"]:hover p {
         background-color: #475569 !important;
+        color: #FFFFFF !important;
         transition: background-color 0.2s ease;
     }
 
