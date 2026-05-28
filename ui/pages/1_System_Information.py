@@ -6,11 +6,9 @@ using SystemInformationCollector and SystemInformationAnalyzer classes.
 """
 
 import streamlit as st
-import pandas as pd
 from datetime import datetime
 import logging
 import sys
-import os
 from pathlib import Path
 
 # Add parent directory to path for imports
