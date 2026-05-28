@@ -118,7 +118,7 @@ h1 a, h2 a, h3 a,
     border-bottom: none;
     white-space: nowrap;
 }
-.stTabs [aria-selected="true"] {
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
     background: #00233C !important;
     color: #FFFFFF !important;
     border-color: #00233C !important;
