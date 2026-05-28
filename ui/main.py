@@ -108,10 +108,10 @@ def get_global_css():
         letter-spacing: 0.01em;
     }
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a:hover div p {
-        color: #C24B00 !important;
+        color: #00233C !important;
     }
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a[aria-current="page"] div p {
-        color: #C24B00 !important;
+        color: #00233C !important;
         font-weight: 700 !important;
     }
     /* 10. Section label MODULOS — unified with sidebar headers */

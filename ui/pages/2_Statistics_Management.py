@@ -433,7 +433,7 @@ def main():
     
     # Threshold configuration
     stale_days = st.sidebar.slider(
-        "Umbral Días para Stats Desactualizadas",
+        "Stale Statistics Threshold (days)",
         min_value=1,
         max_value=90,
         value=THRESHOLDS['stats_stale_days'],
