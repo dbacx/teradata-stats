@@ -6,4 +6,4 @@ port = 8501
 primaryColor = "#64748B"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#f0f4f8"
-textColor = "#00233C"
+textColor = "#FFFFFF"

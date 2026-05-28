@@ -60,23 +60,20 @@ def get_global_css():
     }
 
     /* 4. Botones primarios */
-    [data-testid="baseButton-primary"],
-    [data-testid="baseButton-primary"] > div,
-    [data-testid="baseButton-primary"] p,
-    [data-testid="baseButton-primary"] span {
-        background-color: #64748B !important;
-        color: #FFFFFF !important;
-        border: none !important;
-        font-weight: 600 !important;
-        border-radius: 6px !important;
-    }
-    [data-testid="baseButton-primary"]:hover,
-    [data-testid="baseButton-primary"]:hover span,
-    [data-testid="baseButton-primary"]:hover p {
-        background-color: #475569 !important;
-        color: #FFFFFF !important;
-        transition: background-color 0.2s ease;
-    }
+        button[kind="primary"],
+        button[kind="primary"] * {
+            background-color: #64748B !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            font-weight: 600 !important;
+            border-radius: 6px !important;
+        }
+        button[kind="primary"]:hover,
+        button[kind="primary"]:hover * {
+            background-color: #475569 !important;
+            color: #FFFFFF !important;
+            transition: background-color 0.2s ease;
+        }
 
     /* 5. Sidebar navigation — tipografía unificada */
     [data-testid="stSidebar"] [data-testid="stSidebarNav"] a div {
