@@ -7,16 +7,12 @@ This module contains system-wide configuration parameters including:
 """
 
 import os
-from typing import Tuple
 
 # System Thresholds
 THRESHOLDS = {
     "stats_stale_days": 15,
     "pi_skew_pct": 30,
-    "large_scan_size_gb": 10,
     "unused_object_days": 90,
-    "space_critical_pct": 80,
-    "space_warning_pct": 60,
 }
 
 # Load system database exclusions dynamically from external file

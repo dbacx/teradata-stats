@@ -8,7 +8,7 @@ columns (Action_SQL or RemediationDDL) dynamically.
 
 import logging
 import pandas as pd
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from pathlib import Path
 import sys
 from core.base_analyzer import BaseAnalyzer, Severity
