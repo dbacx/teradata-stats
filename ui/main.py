@@ -59,16 +59,16 @@ def get_global_css():
         display: block !important;
     }
 
-    /* 4. Botones primarios — Teradata Orange oficial */
+    /* 4. Botones primarios — Teradata Navy oficial */
     [data-testid="baseButton-primary"] {
-        background-color: #C24B00 !important;
+        background-color: #00233C !important;
         color: #FFFFFF !important;
         border: none !important;
         font-weight: 600 !important;
         border-radius: 6px !important;
     }
     [data-testid="baseButton-primary"]:hover {
-        background-color: #A33D00 !important;
+        background-color: #001828 !important;
         transition: background-color 0.2s ease;
     }
 
@@ -148,6 +148,16 @@ def get_global_css():
         background: #1a3a52 !important;
         color: #FFFFFF !important;
     }
+    /* 12. MODULOS — igualar al tamaño de st.sidebar.header() */
+    [data-testid="stSidebarNav"] + div span,
+    [data-testid="stSidebarNavSeparator"] ~ div p,
+    [data-testid="stSidebar"] .st-emotion-cache-1cypcdb {
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        color: #1a2b38 !important;
+    }
 </style>
 """
 
@@ -208,13 +218,18 @@ if df_conn.empty:
         )
 else:
     with st.sidebar:
-        st.markdown("### Conexión")
+        st.sidebar.header("CONEXION")
 
         customers = get_customers(df_conn)
         selected_customer = st.selectbox("Cliente", customers, key="sb_customer")
 
-        systems = get_systems(df_conn, selected_customer) if selected_customer else []
-        selected_system = st.selectbox("Sistema", systems, key="sb_system")
+        systems_df = get_systems(df_conn, selected_customer)
+        system_options = {
+            f"{row['System Name']} ({row['Site ID']})": row["Site ID"]
+            for _, row in systems_df.iterrows()
+        }
+        selected_label = st.selectbox("Sistema", list(system_options.keys()), key="sb_system")
+        selected_system = system_options.get(selected_label, "")
 
         if st.button("Conectar", type="primary"):
             params = get_connection_params(df_conn, selected_customer, selected_system)
@@ -223,7 +238,7 @@ else:
             else:
                 try:
                     connection = create_connection_from_params(params)
-                    connection.close()
+                    st.session_state["td_conn"] = connection    # ← guardar el objeto
                     st.session_state["td_params"] = params
                     st.session_state["td_connected"] = True
                     st.success(f"Conectado a {params['host']}")

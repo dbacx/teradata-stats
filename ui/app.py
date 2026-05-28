@@ -59,24 +59,25 @@ def main_app():
     st.markdown("""
     <div style="background-color: #f0f4f8; padding: 2rem 1.5rem; border-radius: 8px; text-align: center; margin-bottom: 1.5rem;">
         <h2 style="margin: 0 0 0.25rem 0; color: #00233C;">VantageOps</h2>
-        <p style="margin: 0; color: #555; font-size: 1rem;">Managed Services &mdash; Teradata DBA Optimization Suite</p>
+        <p style="margin: 0; color: #555; font-size: 1.5rem; font-weight: 300;">
+    Managed Services &mdash; Teradata DBA Optimization Suite
+</p>
     </div>
     """, unsafe_allow_html=True)
 
     # Corporate Welcome Section
-    st.markdown("## Teradata DBA Services Framework")
+    st.markdown("## Vantage Operations")
     st.markdown("""
-Este framework integral proporciona capacidades de auditoría de base de datos, optimización de estadísticas,
-gestión de espacio, evaluación de seguridad y recolección de datos para entornos Teradata.
+VantageOps — Statistics Management es una solución de inteligencia operacional diseñada para equipos de Managed Services que administran entornos Teradata de misión crítica.
+La plataforma automatiza el ciclo completo de gestión de estadísticas, permitiendo a los DBAs:
 
-La herramienta permite a los administradores de bases de datos e ingenieros de datos:
-- Analizar y optimizar estadísticas de base de datos para mejorar el rendimiento de consultas
-- Monitorear y gestionar la utilización de espacio en base de datos
-- Evaluar configuraciones de seguridad y patrones de acceso de usuarios
-- Evaluar el registro de consultas y métricas de rendimiento
-- Generar recomendaciones DDL accionables para remediación
+Identificar estadísticas obsoletas, ausentes o redundantes que impactan el rendimiento del optimizador
+Detectar inflación del diccionario de datos y generar sentencias DROP STATISTICS de remediación
+Generar scripts COLLECT STATISTICS priorizados por severidad, listos para ejecución
+Obtener visibilidad inmediata del estado de salud estadístico por base de datos y tabla
 
-Para más información sobre soluciones Teradata, visite el [Sitio Web Oficial de Teradata](https://www.teradata.com/).
+El resultado es una reducción sostenida en los tiempos de respuesta de consultas y un diccionario Teradata limpio, auditable y alineado con las mejores prácticas de la plataforma.
+Para más información sobre soluciones Teradata, visite el Sitio Web Oficial de Teradata.).
 """)
     st.markdown("---")
 
