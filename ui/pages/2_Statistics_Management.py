@@ -173,11 +173,11 @@ def display_kpi_cards(analyzed_data: dict):
 
 
 def display_findings_table(analyzed_data: dict):
-    """Display findings table with conditional formatting."""
+    """Display findings table — tabbed by Component, one tab per category."""
     st.subheader("Tabla de Hallazgos")
-    
+
     all_findings = []
-    
+
     for component_name, component_key in COMPONENT_RENDER_ORDER:
         result = analyzed_data.get(component_key, pd.DataFrame())
         if isinstance(result, dict):
@@ -192,64 +192,110 @@ def display_findings_table(analyzed_data: dict):
                 df_copy = df.copy()
                 df_copy['Component'] = component_name
                 all_findings.append(df_copy)
-    
+
     if not all_findings:
         st.success("No se encontraron hallazgos")
         return
-    
-    combined_df = pd.concat(all_findings, ignore_index=True)
-    
-    # Severity filter — only 5 levels
-    severity_filter = st.multiselect(
-        "Filtrar por Severidad",
-        options=SEVERITY_ORDER,
-        default=SEVERITY_ORDER
-    )
-    
-    if severity_filter and 'Severity' in combined_df.columns:
-        combined_df = combined_df[combined_df['Severity'].isin(severity_filter)]
-    
-    # Component filter
-    component_labels = [name for name, _ in COMPONENT_RENDER_ORDER]
-    component_filter = st.multiselect(
-        "Filtrar por Componente",
-        options=component_labels,
-        default=component_labels
-    )
-    
-    if component_filter and 'Component' in combined_df.columns:
-        combined_df = combined_df[combined_df['Component'].isin(component_filter)]
-    
-    # Conditional formatting
-    def highlight_severity(val):
-        if val == 'CRITICAL':
-            return 'background-color: #FF6B6B; color: white; font-weight: bold'
-        elif val == 'HIGH':
-            return 'background-color: #FFA500; color: white; font-weight: bold'
-        elif val == 'MEDIUM':
-            return 'background-color: #FFD700; color: black'
-        elif val == 'LOW':
-            return 'background-color: #90EE90; color: black'
-        return ''
-    
-    if 'Severity' in combined_df.columns:
-        styled_df = combined_df.style.applymap(highlight_severity, subset=['Severity'])
-    else:
-        styled_df = combined_df.style
 
-    st.dataframe(
-        styled_df,
-        width='stretch',
-        height=500
-    )
-    
-    # CSV Download
+    combined_df = pd.concat(all_findings, ignore_index=True)
+
+    # ── Tabbed interface — one tab per Component ──────────────────────────
+
+    DISPLAY_COLS = ["DatabaseName", "TableName", "Action_SQL", "Component"]
+    display_cols = [c for c in DISPLAY_COLS if c in combined_df.columns]
+
+    COMPONENT_ORDER = [
+        "Zero Statistics",
+        "Missing Table Stats",
+        "Stale Statistics",
+        "Stale by Volume",
+        "Statistics Bloat",
+        "Missing Index Stats",
+        "Missing PARTITION Stats",
+        "MLPPI Missing Stats",
+        "DBC Recommendations",
+        "TDStats Recommendations",
+        "Multicolumn Issues",
+        "Sample Candidates",
+        "Skipped/Sample",
+        "Sampled Skew",
+        "Unused Objects",
+    ]
+
+    present_components = [
+        c for c in COMPONENT_ORDER
+        if c in combined_df["Component"].values
+    ]
+    extra_components = [
+        c for c in combined_df["Component"].unique()
+        if c not in COMPONENT_ORDER
+    ]
+    all_tabs = present_components + extra_components
+
+    if not all_tabs:
+        st.info("No se encontraron hallazgos para mostrar.")
+    else:
+        tab_labels = []
+        for comp in all_tabs:
+            count = len(combined_df[combined_df["Component"] == comp])
+            tab_labels.append(f"{comp} ({count})")
+
+        tabs = st.tabs(tab_labels)
+
+        severity_colors = {
+            "CRITICAL": "#FF5F02",
+            "HIGH":     "#FF8C42",
+            "MEDIUM":   "#C4B7F1",
+            "LOW":      "#3053F4",
+            "INFO":     "#04CE7E",
+        }
+
+        for tab, comp in zip(tabs, all_tabs):
+            with tab:
+                df_tab = combined_df[
+                    combined_df["Component"] == comp
+                ][display_cols].reset_index(drop=True)
+
+                if df_tab.empty:
+                    st.info(f"No hay hallazgos para: {comp}")
+                    continue
+
+                if "Severity" in combined_df.columns:
+                    sev_series = combined_df.loc[
+                        combined_df["Component"] == comp, "Severity"
+                    ].reset_index(drop=True)
+
+                    def highlight_severity(row):
+                        sev = sev_series.get(row.name, "")
+                        color = severity_colors.get(sev, "")
+                        if color:
+                            return [f"border-left: 3px solid {color}"] * len(row)
+                        return [""] * len(row)
+
+                    styled = df_tab.style.apply(highlight_severity, axis=1)
+                    st.dataframe(
+                        styled,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=min(400, 35 * len(df_tab) + 38),
+                    )
+                else:
+                    st.dataframe(
+                        df_tab,
+                        use_container_width=True,
+                        hide_index=True,
+                        height=min(400, 35 * len(df_tab) + 38),
+                    )
+
+                st.caption(f"{len(df_tab):,} hallazgos en esta categoría")
+
+    # CSV Download — all findings, all components
     csv = combined_df.to_csv(index=False)
     st.download_button(
         label="Descargar CSV",
         data=csv,
         file_name=f"stats_findings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv"
+        mime="text/csv",
     )
 
 

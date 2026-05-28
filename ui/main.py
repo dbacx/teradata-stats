@@ -121,6 +121,33 @@ def get_global_css():
         color: #888 !important;
         text-transform: uppercase !important;
     }
+
+    /* 11. Findings tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 4px;
+        flex-wrap: wrap;
+        border-bottom: 2px solid #00233C;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: #f0f4f8;
+        border-radius: 6px 6px 0 0;
+        padding: 6px 14px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #00233C;
+        border: 1px solid #e2e8f0;
+        border-bottom: none;
+        white-space: nowrap;
+    }
+    .stTabs [aria-selected="true"] {
+        background: #00233C !important;
+        color: #FFFFFF !important;
+        border-color: #00233C !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #1a3a52 !important;
+        color: #FFFFFF !important;
+    }
 </style>
 """
 
