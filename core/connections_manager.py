@@ -52,19 +52,19 @@ def get_customers(df: pd.DataFrame) -> list:
     return sorted(df["Customer Name"].dropna().unique().tolist())
 
 
-def get_systems(df: pd.DataFrame, customer: str) -> list:
-    """Return sorted list of systems for a given customer."""
+def get_systems(df: pd.DataFrame, customer: str) -> pd.DataFrame:
+    """Return DataFrame of systems for a given customer (System Name + Site ID)."""
     if df.empty or "System Name" not in df.columns:
-        return []
-    filtered = df[df["Customer Name"] == customer]
-    return sorted(filtered["System Name"].dropna().unique().tolist())
+        return pd.DataFrame(columns=["System Name", "Site ID"])
+    filtered = df[df["Customer Name"] == customer][["System Name", "Site ID"]].drop_duplicates()
+    return filtered.sort_values("System Name").reset_index(drop=True)
 
 
-def get_connection_params(df: pd.DataFrame, customer: str, system: str) -> dict:
-    """Return connection parameter dict for a customer/system pair."""
+def get_connection_params(df: pd.DataFrame, customer: str, site_id: str) -> dict:
+    """Return connection parameter dict for a customer/site_id pair."""
     if df.empty:
         return {}
-    mask = (df["Customer Name"] == customer) & (df["System Name"] == system)
+    mask = (df["Customer Name"] == customer) & (df["Site ID"] == site_id)
     rows = df[mask]
     if rows.empty:
         return {}
@@ -75,5 +75,5 @@ def get_connection_params(df: pd.DataFrame, customer: str, system: str) -> dict:
         "password": str(row.get("Password", "")),
         "site_id": str(row.get("Site ID", "")),
         "customer": customer,
-        "system": system,
+        "system": str(row.get("System Name", "")),
     }
