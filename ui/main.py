@@ -118,10 +118,10 @@ def get_global_css():
     [data-testid="stSidebar"] .st-emotion-cache-1cypcdb,
     [data-testid="stSidebar"] [data-testid="stSidebarNavSeparator"] + div span {
         font-size: 1rem !important;
-        font-weight: 600 !important;
-        letter-spacing: normal !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.05em !important;
         color: #1a2b38 !important;
-        text-transform: none !important;
+        text-transform: uppercase !important;
         text-align: center !important;
         display: block !important;
     }
@@ -157,11 +157,11 @@ def get_global_css():
     /* "Configuración" and "Conexión" — st.sidebar.header() → h2 */
     [data-testid="stSidebar"] h2 {
         font-size: 1rem !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         color: #1a2b38 !important;
         text-align: center !important;
-        text-transform: none !important;
-        letter-spacing: normal !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
         margin-top: 0.8rem !important;
         margin-bottom: 0.4rem !important;
     }
@@ -172,11 +172,11 @@ def get_global_css():
     [data-testid="stSidebar"] .st-emotion-cache-1cypcdb,
     [data-testid="stSidebarNavItems"] > div > span {
         font-size: 1rem !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         color: #1a2b38 !important;
         text-align: center !important;
-        text-transform: none !important;
-        letter-spacing: normal !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
         display: block !important;
         margin-top: 0.8rem !important;
         margin-bottom: 0.4rem !important;
@@ -279,6 +279,8 @@ else:
                 f"</div>",
                 unsafe_allow_html=True,
             )
+
+        st.sidebar.markdown("---")
 
 # ---------------------------------------------------------------------------
 # Page navigation
